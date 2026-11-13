@@ -1,0 +1,69 @@
+name: reconflow
+x-backend: &backend
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  image: reconflow-backend:local
+  env_file: .env
+  environment: &environment
+    DATABASE_URL: postgresql://reconflow:reconflow@db:5432/reconflow
+    AWS_ENDPOINT_URL: http://aws:5000
+    SQS_QUEUE_URL: http://aws:5000/123456789012/reconflow-jobs
+    AWS_ACCESS_KEY_ID: local
+    AWS_SECRET_ACCESS_KEY: local
+    AWS_EC2_METADATA_DISABLED: 'true'
+  depends_on:
+    db:
+      condition: service_healthy
+    aws:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:17.7-alpine
+    environment:
+      POSTGRES_DB: reconflow
+      POSTGRES_USER: reconflow
+      POSTGRES_PASSWORD: reconflow
+    ports: ['127.0.0.1:55432:5432']
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U reconflow -d reconflow']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  aws:
+    image: motoserver/moto:5.1.22
+    ports: ['127.0.0.1:55000:5000']
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:5000/moto-api/')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  setup:
+    <<: *backend
+    entrypoint: ['python', '-m', 'reconflow.bootstrap']
+    restart: 'no'
+  api:
+    <<: *backend
+    entrypoint: ['python', '-m', 'uvicorn', 'reconflow.api:app', '--host', '0.0.0.0', '--port', '8000']
+    ports: ['127.0.0.1:58000:8000']
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+  worker:
+    <<: *backend
+    entrypoint: ['python', '-m', 'reconflow.worker']
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+  web:
+    build:
+      context: frontend
+    ports: ['127.0.0.1:5173:80']
+    depends_on: [api]
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

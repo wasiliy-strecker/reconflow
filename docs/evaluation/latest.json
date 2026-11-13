@@ -1,0 +1,247 @@
+{
+  "timestamp": "2026-11-13T09:07:06.265337+01:00",
+  "model": "gpt-6-luna",
+  "prompt_version": "invoice-v1",
+  "synthetic_data_only": true,
+  "scope": "Small smoke evaluation, not a real-world accuracy guarantee",
+  "results": [
+    {
+      "fixture": "RE-2026-1001.pdf",
+      "format": "application/pdf",
+      "checks": {
+        "invoice_number": true,
+        "issuer": true,
+        "customer": true,
+        "invoice_date": true,
+        "due_date": true,
+        "currency": true,
+        "net_amount": true,
+        "tax_amount": true,
+        "gross_amount": true
+      },
+      "expected": {
+        "invoice_number": "RE-2026-1001",
+        "issuer": "Form & Funktion Musteragentur",
+        "customer": "Nordlicht Studio",
+        "invoice_date": "2026-11-02",
+        "due_date": "2026-11-16",
+        "currency": "EUR",
+        "net_amount": "1000.00",
+        "tax_amount": "190.00",
+        "gross_amount": "1190.00",
+        "line_items": [
+          {
+            "description": "Website-Konzeption",
+            "quantity": "1",
+            "amount": "1000.00"
+          }
+        ],
+        "warnings": [],
+        "evidence": []
+      },
+      "actual": {
+        "invoice_number": "RE-2026-1001",
+        "issuer": "Form & Funktion Musteragentur",
+        "customer": "Nordlicht Studio",
+        "invoice_date": "2026-11-02",
+        "due_date": "2026-11-16",
+        "currency": "EUR",
+        "net_amount": "1000.00",
+        "tax_amount": "190.00",
+        "gross_amount": "1190.00",
+        "line_items": [
+          {
+            "description": "Website-Konzeption",
+            "quantity": "1",
+            "amount": "1000.00"
+          }
+        ],
+        "warnings": [
+          "Das Dokument ist als „SYNTHETISCHE BEISPIELRECHNUNG“ gekennzeichnet und enthält den Hinweis „Ausschliesslich Testdaten“."
+        ],
+        "evidence": [
+          {
+            "field": "invoice_number",
+            "page": 1,
+            "text": "RECHNUNG RE-2026-1001"
+          },
+          {
+            "field": "customer",
+            "page": 1,
+            "text": "Rechnung an: Nordlicht Studio"
+          },
+          {
+            "field": "gross_amount",
+            "page": 1,
+            "text": "Gesamtbetrag: 1.190,00 EUR"
+          }
+        ]
+      },
+      "duration_seconds": 7.81,
+      "usage": {
+        "cost_eur": "0.00031284",
+        "input_tokens": "824",
+        "output_tokens": "404"
+      }
+    },
+    {
+      "fixture": "RE-2026-1002.png",
+      "format": "image/png",
+      "checks": {
+        "invoice_number": true,
+        "issuer": true,
+        "customer": true,
+        "invoice_date": true,
+        "due_date": true,
+        "currency": true,
+        "net_amount": true,
+        "tax_amount": true,
+        "gross_amount": true
+      },
+      "expected": {
+        "invoice_number": "RE-2026-1002",
+        "issuer": "Form & Funktion Musteragentur",
+        "customer": "Atelier Morgenrot",
+        "invoice_date": "2026-11-02",
+        "due_date": "2026-11-16",
+        "currency": "EUR",
+        "net_amount": "500.00",
+        "tax_amount": "95.00",
+        "gross_amount": "595.00",
+        "line_items": [
+          {
+            "description": "Markenworkshop",
+            "quantity": "1",
+            "amount": "500.00"
+          }
+        ],
+        "warnings": [],
+        "evidence": []
+      },
+      "actual": {
+        "invoice_number": "RE-2026-1002",
+        "issuer": "Form & Funktion Musteragentur",
+        "customer": "Atelier Morgenrot",
+        "invoice_date": "2026-11-02",
+        "due_date": "2026-11-16",
+        "currency": "EUR",
+        "net_amount": "500.00",
+        "tax_amount": "95.00",
+        "gross_amount": "595.00",
+        "line_items": [
+          {
+            "description": "Markenworkshop",
+            "quantity": "1",
+            "amount": "500.00"
+          }
+        ],
+        "warnings": [
+          "Das Dokument ist als „SYNTHETISCHE BEISPIELRECHNUNG“ gekennzeichnet und nennt ausschließlich Testdaten.",
+          "Der Positionsbetrag ist nicht separat ausgewiesen; 500,00 EUR sind als Netto-Gesamtbetrag angegeben. Das Dokument weist außerdem ausdrücklich darauf hin, keine Zahlung auszulösen."
+        ],
+        "evidence": [
+          {
+            "field": "Rechnungsnummer",
+            "page": 1,
+            "text": "RECHNUNG RE-2026-1002"
+          },
+          {
+            "field": "Kunde",
+            "page": 1,
+            "text": "Rechnung an: Atelier Morgenrot"
+          },
+          {
+            "field": "Gesamtbetrag",
+            "page": 1,
+            "text": "Gesamtbetrag: 595,00 EUR"
+          }
+        ]
+      },
+      "duration_seconds": 6.11,
+      "usage": {
+        "cost_eur": "0.00046838",
+        "input_tokens": "2623",
+        "output_tokens": "327"
+      }
+    },
+    {
+      "fixture": "RE-2026-1005.jpg",
+      "format": "image/jpeg",
+      "checks": {
+        "invoice_number": true,
+        "issuer": true,
+        "customer": true,
+        "invoice_date": true,
+        "due_date": true,
+        "currency": true,
+        "net_amount": true,
+        "tax_amount": true,
+        "gross_amount": true
+      },
+      "expected": {
+        "invoice_number": "RE-2026-1005",
+        "issuer": "Form & Funktion Musteragentur",
+        "customer": "Mira Kunsthandel",
+        "invoice_date": "2026-11-02",
+        "due_date": "2026-11-16",
+        "currency": "EUR",
+        "net_amount": "700.00",
+        "tax_amount": "133.00",
+        "gross_amount": "833.00",
+        "line_items": [
+          {
+            "description": "Shop-Erweiterung",
+            "quantity": "1",
+            "amount": "700.00"
+          }
+        ],
+        "warnings": [],
+        "evidence": []
+      },
+      "actual": {
+        "invoice_number": "RE-2026-1005",
+        "issuer": "Form & Funktion Musteragentur",
+        "customer": "Mira Kunsthandel",
+        "invoice_date": "2026-11-02",
+        "due_date": "2026-11-16",
+        "currency": "EUR",
+        "net_amount": "700.00",
+        "tax_amount": "133.00",
+        "gross_amount": "833.00",
+        "line_items": [
+          {
+            "description": "Shop-Erweiterung",
+            "quantity": "1",
+            "amount": null
+          }
+        ],
+        "warnings": [
+          "Als synthetische Beispielrechnung gekennzeichnet; Testdaten."
+        ],
+        "evidence": [
+          {
+            "field": "invoice_number",
+            "page": 1,
+            "text": "RECHNUNG RE-2026-1005"
+          },
+          {
+            "field": "customer",
+            "page": 1,
+            "text": "Rechnung an: Mira Kunsthandel"
+          },
+          {
+            "field": "gross_amount",
+            "page": 1,
+            "text": "Gesamtbetrag: 833,00 EUR"
+          }
+        ]
+      },
+      "duration_seconds": 4.08,
+      "usage": {
+        "cost_eur": "0.00043923",
+        "input_tokens": "2623",
+        "output_tokens": "274"
+      }
+    }
+  ]
+}
