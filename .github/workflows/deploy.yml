@@ -1,0 +1,82 @@
+name: Deploy AWS demo
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+concurrency:
+  group: aws-demo
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: aws-demo
+    env:
+      AWS_REGION: eu-central-1
+      ECR_REPOSITORY: reconflow
+      WEB_BUCKET: ${{ vars.WEB_BUCKET }}
+      DISTRIBUTION_ID: ${{ vars.DISTRIBUTION_ID }}
+      DEMO_URL: ${{ vars.DEMO_URL }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require successful CI for this commit
+        run: |
+          test "$(gh run list --workflow ci.yml --commit "$GITHUB_SHA" --event push --limit 1 --json conclusion --jq '.[0].conclusion')" = success
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEPLOY_ROLE_ARN }}
+          aws-region: eu-central-1
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: registry
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        id: image
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/amd64
+          provenance: false
+          push: true
+          tags: ${{ steps.registry.outputs.registry }}/reconflow:${{ github.sha }}-${{ github.run_attempt }}
+      - name: Record previous images and migrate
+        env:
+          IMAGE_URI: ${{ steps.registry.outputs.registry }}/reconflow@${{ steps.image.outputs.digest }}
+        run: |
+          mkdir release
+          for service in api worker migrate; do
+            aws lambda get-function --function-name "reconflow-$service" --query 'Code.ImageUri' --output text > "release/previous-$service.txt"
+          done
+          printf '%s\n' "$IMAGE_URI" > release/image.txt
+          aws lambda update-function-code --function-name reconflow-migrate --image-uri "$IMAGE_URI" > /dev/null
+          aws lambda wait function-updated-v2 --function-name reconflow-migrate
+          aws lambda invoke --function-name reconflow-migrate --cli-read-timeout 210 release/migration-result.json > release/migration-meta.json
+          python3 - <<'PY'
+          import json
+          assert 'FunctionError' not in json.load(open('release/migration-meta.json'))
+          assert json.load(open('release/migration-result.json')).get('ok') is True
+          PY
+          for service in worker api; do
+            aws lambda update-function-code --function-name "reconflow-$service" --image-uri "$IMAGE_URI" > /dev/null
+            aws lambda wait function-updated-v2 --function-name "reconflow-$service"
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: frontend
+      - name: Publish static frontend
+        run: |
+          aws s3 sync frontend/dist/ "s3://$WEB_BUCKET/" --exclude index.html --cache-control 'public,max-age=31536000,immutable'
+          aws s3 cp frontend/dist/index.html "s3://$WEB_BUCKET/index.html" --cache-control 'no-cache'
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths '/' '/index.html' > release/invalidation.json
+          curl --fail --retry 5 --retry-delay 5 "$DEMO_URL/health"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aws-release-${{ github.sha }}
+          path: release/

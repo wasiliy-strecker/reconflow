@@ -1,0 +1,65 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.8'
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --frozen
+      - run: npm ci
+        working-directory: frontend
+      - name: Start isolated dependencies
+        run: |
+          cp .env.example .env
+          docker compose up -d --wait db aws
+          uv run python -m reconflow.bootstrap
+      - name: Python checks and integration tests without paid API calls
+        run: |
+          uv run ruff check backend tests scripts
+          uv run ruff format --check backend tests scripts
+          uv run pytest -m 'not live' --cov=reconflow --cov-report=term-missing
+      - run: npm run build
+        working-directory: frontend
+      - name: Start built application
+        run: |
+          docker compose up -d --build
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://localhost:5173/health; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm run test:e2e
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure
+          path: frontend/test-results/
+      - run: docker compose down -v
+        if: always()
+  infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.13.5'
+      - run: terraform fmt -check -recursive infra
+      - run: terraform -chdir=infra/bootstrap init -backend=false -input=false && terraform -chdir=infra/bootstrap validate
+      - run: terraform -chdir=infra/app init -backend=false -input=false && terraform -chdir=infra/app validate

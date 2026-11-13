@@ -1,0 +1,6 @@
+image_uri          = "123456789012.dkr.ecr.eu-central-1.amazonaws.com/reconflow@sha256:REPLACE_WITH_DIGEST"
+openai_secret_arn  = "arn:aws:secretsmanager:eu-central-1:123456789012:secret:reconflow/openai-REPLACE"
+session_secret_arn = "arn:aws:secretsmanager:eu-central-1:123456789012:secret:reconflow/session-REPLACE"
+budget_email       = "REPLACE@example.com"
+# Reuse an account's existing provider if present.
+existing_github_oidc_arn = ""
