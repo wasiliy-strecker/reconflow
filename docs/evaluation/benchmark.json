@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-11-13T09:17:19.378441+01:00",
+  "python": "3.12.3",
+  "platform": "Linux-6.14.0-33-generic-x86_64-with-glibc2.39",
+  "invoices": 50000,
+  "payments": 50000,
+  "duration_seconds": 3.165,
+  "scope": "Pure deterministic engine, synthetic unique references; excludes I/O, database, API and AI. Not an end-to-end SLA."
+}

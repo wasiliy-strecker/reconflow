@@ -12,7 +12,7 @@ from reconflow.db import transaction
 
 def migrate():
     with transaction() as db:
-        db.execute("SELECT pg_advisory_xact_lock(71823760)")
+        db.execute("SELECT pg_advisory_xact_lock(71823760) IS NULL AS locked")
         db.execute(
             "CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ DEFAULT now())"
         )
@@ -35,6 +35,11 @@ def migrate():
                 {"version": path.name, "checksum": checksum},
             )
             print(f"Applied {path.name}")
+
+
+def handler(event, context):
+    migrate()
+    return {"ok": True}
 
 
 if __name__ == "__main__":

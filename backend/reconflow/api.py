@@ -23,6 +23,27 @@ app = FastAPI(
 )
 
 
+class BodyLimit:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        size = 0
+
+        async def limited_receive():
+            nonlocal size
+            message = await receive()
+            size += len(message.get("body", b""))
+            if size > 5 * 1024 * 1024:
+                raise HTTPException(413, "Anfrage ist zu groß.")
+            return message
+
+        await self.app(scope, limited_receive, send)
+
+
+app.add_middleware(BodyLimit)
+
+
 class SafeJSON(JSONResponse):
     def render(self, content):
         return dumps(content).encode()
@@ -340,7 +361,11 @@ def decision(body: Decision, s: Session):
         )
     if not row or row["version"] != body.invoice_version:
         raise ValueError("Die Rechnung wurde geändert. Bitte erneut prüfen.")
-    return SafeJSON(service.run_reconciliation(s, {body.payment_id: body.invoice_id}))
+    return SafeJSON(
+        service.run_reconciliation(
+            s, {body.payment_id: body.invoice_id}, {body.invoice_id: body.invoice_version}
+        )
+    )
 
 
 @app.get("/api/reports/{identifier}.xlsx")

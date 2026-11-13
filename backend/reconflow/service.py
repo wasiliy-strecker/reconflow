@@ -1,6 +1,7 @@
 import io
 import re
 import uuid
+from decimal import Decimal
 
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
@@ -8,7 +9,7 @@ from openpyxl.styles import Font, PatternFill
 from reconflow import fixtures, storage
 from reconflow.config import settings
 from reconflow.db import dumps, transaction
-from reconflow.domain import InvoiceData, invoice_issues, parse_payments, read_csv, reconcile
+from reconflow.domain import InvoiceData, invoice_issues, money, parse_payments, read_csv, reconcile
 
 
 def uid():
@@ -31,7 +32,7 @@ def create_session():
     session = uid()
     # Advisory lock makes the demo's global admission limit atomic across Lambda instances.
     with transaction() as db:
-        db.execute("SELECT pg_advisory_xact_lock(71823761)")
+        db.execute("SELECT pg_advisory_xact_lock(71823761) IS NULL AS locked")
         count = db.one(
             "SELECT count(*) AS count FROM sessions WHERE created_at>now()-interval '1 hour'"
         )
@@ -136,7 +137,18 @@ def overview(session):
         )
     for invoice in invoices:
         invoice["issues"] = invoice_issues(InvoiceData.model_validate(invoice["payload"]))
+    totals = {}
+    for invoice in invoices:
+        data = invoice["payload"]
+        if data.get("currency") and data.get("gross_amount"):
+            currency = data["currency"]
+            totals[currency] = totals.get(currency, Decimal("0.00")) + money(data["gross_amount"])
+    if run:
+        run["stale"] = run["payload"]["invoice_versions"] != {
+            i["id"]: i["version"] for i in invoices
+        } or set(run["payload"]["payment_ids"]) != {p["id"] for p in payments}
     return {
+        "totals": {key: str(value) for key, value in totals.items()},
         "invoices": invoices,
         "documents": docs,
         "payments": payments,
@@ -217,7 +229,12 @@ def import_payments(session, content):
             if payment["external_id"] not in existing:
                 db.execute(
                     "INSERT INTO payments(id,session_id,external_id,reference,amount,currency,paid_at,payer) VALUES (:id,:session,:external_id,:reference,:amount,:currency,CAST(:paid_at AS date),:payer)",
-                    {"id": uid(), "session": session, **payment},
+                    {
+                        "id": uid(),
+                        "session": session,
+                        **payment,
+                        "amount": money(payment["amount"]),
+                    },
                 )
                 inserted += 1
         result = {"inserted": inserted, "duplicates": len(payments) - inserted, "errors": []}
@@ -259,8 +276,11 @@ def import_invoices(session, content):
             {"session": session, "sha": sha},
         ):
             return {"inserted": 0, "errors": [], "repeated_import": True}
-        if len(parsed) > settings().max_documents:
-            raise ValueError("Höchstens 20 Rechnungen pro Import.")
+        count = db.one(
+            "SELECT count(*) AS count FROM invoices WHERE session_id=:session", {"session": session}
+        )
+        if int(count["count"]) + len(parsed) > settings().max_documents:
+            raise ValueError("Die Sitzung enthält zu viele Rechnungen.")
         for data in parsed:
             db.execute(
                 "INSERT INTO invoices(id,session_id,payload,source) VALUES (:id,:session,CAST(:payload AS jsonb),'csv')",
@@ -275,7 +295,15 @@ def import_invoices(session, content):
 
 
 def create_job(session, kind, target, payload=None, retry=False):
-    request_key = target + (":" + uid() if retry else "")
+    request_key = (
+        target
+        + (
+            ":" + (payload or {})["snapshot"]
+            if kind == "suggest" and (payload or {}).get("snapshot")
+            else ""
+        )
+        + (":" + uid() if retry else "")
+    )
     with transaction() as db:
         active_session(db, session)
         db.one("SELECT id FROM sessions WHERE id=:id FOR UPDATE", {"id": session})
@@ -310,13 +338,19 @@ def create_job(session, kind, target, payload=None, retry=False):
     return job
 
 
-def run_reconciliation(session, decisions=None):
+def run_reconciliation(session, decisions=None, expected_versions=None):
     with transaction() as db:
         active_session(db, session)
         db.one("SELECT id FROM sessions WHERE id=:id FOR UPDATE", {"id": session})
         invoices = db.execute(
             "SELECT * FROM invoices WHERE session_id=:session ORDER BY id", {"session": session}
         )
+        current_versions = {i["id"]: i["version"] for i in invoices}
+        if any(
+            current_versions.get(key) != version
+            for key, version in (expected_versions or {}).items()
+        ):
+            raise ValueError("Die Rechnung wurde geändert. Bitte erneut prüfen.")
         payments = db.execute(
             "SELECT * FROM payments WHERE session_id=:session ORDER BY id", {"session": session}
         )

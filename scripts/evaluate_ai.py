@@ -67,6 +67,8 @@ def main():
         "timestamp": datetime.now(ZoneInfo("Europe/Berlin")).isoformat(),
         "model": settings().openai_model,
         "prompt_version": ai.PROMPT_VERSION,
+        "prompt_cache_mode": "explicit without breakpoints",
+        "service_tier": "default",
         "synthetic_data_only": True,
         "scope": "Small smoke evaluation, not a real-world accuracy guarantee",
         "results": results,

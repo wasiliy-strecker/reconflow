@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     ai_max_output_tokens: int = 4000
     aws_region: str = "eu-central-1"
     aws_endpoint_url: str | None = None
+    local_document_root: str = ".local-data"
     s3_bucket: str = "reconflow-local"
     sqs_queue_url: str = "http://localhost:55000/123456789012/reconflow-jobs"
     public_origin: str = "http://localhost:5173"

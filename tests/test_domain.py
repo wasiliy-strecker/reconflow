@@ -55,6 +55,23 @@ def test_exact_match():
     assert result[0]["difference"] == "0.00"
 
 
+@pytest.mark.parametrize(
+    "number,reference",
+    [
+        ("RE-1", "RE-10"),
+        ("RE-2026-1001", "Danke, RE20261001."),
+        ("RE2026", "RE-2026"),
+        ("RE-2026-1001", "RE 2026 1001"),
+        ("RE_ABC", "RE-ABC"),
+        ("123", "0123"),
+    ],
+)
+def test_index_preserves_reference_semantics(number, reference):
+    result = reconcile([invoice(number=number)], [payment(reference=reference)])
+    actual = next(row for row in result if row["invoice_id"] == "i1")
+    assert bool(actual["payment_ids"]) == reference_matches(number, reference)
+
+
 def test_partial_and_multiple_partial_payments():
     assert reconcile([invoice()], [payment(amount="500")])[0]["status"] == "PARTIAL"
     result = reconcile([invoice()], [payment("p1", amount="500"), payment("p2", amount="690")])
@@ -98,6 +115,7 @@ def test_manual_decision_allocates_once():
     )
     assert sum(len(row["payment_ids"]) for row in result) == 1
     assert next(r for r in result if r["invoice_id"] == "i2")["status"] == "MATCHED"
+    assert next(r for r in result if r["invoice_id"] == "i2")["reason_code"] == "MANUAL_DECISION"
 
 
 def test_csv_fixture_and_duplicate_ids():

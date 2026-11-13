@@ -92,7 +92,7 @@ def settle(job_id, usage):
             return
         db.execute(
             "UPDATE ai_months SET reserved_eur=reserved_eur-:reserved, spent_eur=spent_eur+:cost WHERE month=:month",
-            {"reserved": call["reserved_eur"], "cost": amount, "month": call["month"]},
+            {"reserved": Decimal(call["reserved_eur"]), "cost": amount, "month": call["month"]},
         )
         db.execute(
             "UPDATE ai_calls SET status='completed',cost_eur=:cost,input_tokens=:input,output_tokens=:output WHERE job_id=:job",
@@ -117,6 +117,9 @@ def request(job_id, instructions, content, output_type):
         text_format=output_type,
         max_output_tokens=c.ai_max_output_tokens,
         reasoning={"effort": "low"},
+        # One-shot documents do not benefit from paid cache writes.
+        prompt_cache_options={"mode": "explicit"},
+        service_tier="default",
         store=False,
     )
     if response.usage:

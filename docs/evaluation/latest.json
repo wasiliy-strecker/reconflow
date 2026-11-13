@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-13T09:07:06.265337+01:00",
+  "timestamp": "2026-11-13T09:31:41.419058+01:00",
   "model": "gpt-6-luna",
   "prompt_version": "invoice-v1",
   "synthetic_data_only": true,
@@ -57,7 +57,7 @@
           }
         ],
         "warnings": [
-          "Das Dokument ist als „SYNTHETISCHE BEISPIELRECHNUNG“ gekennzeichnet und enthält den Hinweis „Ausschliesslich Testdaten“."
+          "Das Dokument ist als „SYNTHETISCHE BEISPIELRECHNUNG“ und als Testdaten gekennzeichnet."
         ],
         "evidence": [
           {
@@ -77,11 +77,11 @@
           }
         ]
       },
-      "duration_seconds": 7.81,
+      "duration_seconds": 5.64,
       "usage": {
-        "cost_eur": "0.00031284",
+        "cost_eur": "0.00030019",
         "input_tokens": "824",
-        "output_tokens": "404"
+        "output_tokens": "381"
       }
     },
     {
@@ -132,36 +132,36 @@
           {
             "description": "Markenworkshop",
             "quantity": "1",
-            "amount": "500.00"
+            "amount": null
           }
         ],
         "warnings": [
-          "Das Dokument ist als „SYNTHETISCHE BEISPIELRECHNUNG“ gekennzeichnet und nennt ausschließlich Testdaten.",
-          "Der Positionsbetrag ist nicht separat ausgewiesen; 500,00 EUR sind als Netto-Gesamtbetrag angegeben. Das Dokument weist außerdem ausdrücklich darauf hin, keine Zahlung auszulösen."
+          "Das Dokument ist als „SYNTHETISCHE BEISPIELRECHNUNG“ gekennzeichnet und enthält den Hinweis „Keine Zahlung ausloesen. Ausschliesslich Testdaten.“",
+          "Für die Position ist kein eigener Betrag angegeben."
         ],
         "evidence": [
           {
-            "field": "Rechnungsnummer",
+            "field": "invoice_number",
             "page": 1,
             "text": "RECHNUNG RE-2026-1002"
           },
           {
-            "field": "Kunde",
+            "field": "customer",
             "page": 1,
             "text": "Rechnung an: Atelier Morgenrot"
           },
           {
-            "field": "Gesamtbetrag",
+            "field": "gross_amount",
             "page": 1,
             "text": "Gesamtbetrag: 595,00 EUR"
           }
         ]
       },
-      "duration_seconds": 6.11,
+      "duration_seconds": 5.29,
       "usage": {
-        "cost_eur": "0.00046838",
+        "cost_eur": "0.00052998",
         "input_tokens": "2623",
-        "output_tokens": "327"
+        "output_tokens": "439"
       }
     },
     {
@@ -212,11 +212,11 @@
           {
             "description": "Shop-Erweiterung",
             "quantity": "1",
-            "amount": null
+            "amount": "700.00"
           }
         ],
         "warnings": [
-          "Als synthetische Beispielrechnung gekennzeichnet; Testdaten."
+          "Das Dokument ist als „SYNTHETISCHE BEISPIELRECHNUNG“ gekennzeichnet und enthält den Hinweis „Ausschliesslich Testdaten“."
         ],
         "evidence": [
           {
@@ -236,12 +236,14 @@
           }
         ]
       },
-      "duration_seconds": 4.08,
+      "duration_seconds": 8.01,
       "usage": {
-        "cost_eur": "0.00043923",
+        "cost_eur": "0.00052338",
         "input_tokens": "2623",
-        "output_tokens": "274"
+        "output_tokens": "427"
       }
     }
-  ]
+  ],
+  "prompt_cache_mode": "explicit without breakpoints",
+  "service_tier": "default"
 }

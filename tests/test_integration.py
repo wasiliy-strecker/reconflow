@@ -6,6 +6,7 @@ from decimal import Decimal
 import pytest
 from fastapi.testclient import TestClient
 from openpyxl import load_workbook
+from pydantic import SecretStr
 from reconflow import ai, fixtures
 from reconflow.api import app
 from reconflow.config import settings
@@ -35,6 +36,60 @@ def seeded(client):
 def test_migrations_repeat_safely():
     migrate()
     migrate()
+
+
+def test_local_bootstrap_repeat_safely():
+    from reconflow.bootstrap import bootstrap
+
+    bootstrap()
+    bootstrap()
+
+
+def test_local_document_survives_emulator_object_loss(client, tmp_path, monkeypatch):
+    from reconflow import storage
+
+    monkeypatch.setattr(settings(), "local_document_root", str(tmp_path))
+    content = fixtures.document(0)[2]
+    key = "sessions/test-restart/document"
+    storage.put(key, content, "application/pdf")
+    storage.client("s3").delete_object(Bucket=settings().s3_bucket, Key=key)
+    assert storage.get(key) == content
+
+
+def test_public_demo_rejects_non_fixture_files(client, monkeypatch):
+    seeded(client)
+    monkeypatch.setattr(settings(), "app_mode", "demo")
+    client.headers["Origin"] = settings().public_origin
+    allowed = client.post(
+        "/api/documents",
+        files={"file": ("example.pdf", fixtures.document(0)[2], "application/pdf")},
+    )
+    assert allowed.status_code == 200
+    rejected = client.post(
+        "/api/documents",
+        files={"file": ("other.pdf", fixtures.document(0)[2] + b"\n", "application/pdf")},
+    )
+    assert rejected.status_code == 422
+
+
+def test_stale_run_and_atomic_decision_version(client):
+    from reconflow import service
+
+    workspace = seeded(client)
+    job = client.post("/api/reconciliation-runs").json()
+    process(job["id"])
+    assert client.get("/api/workspace").json()["run"]["stale"] is False
+    row = workspace["invoices"][0]
+    assert (
+        client.put(
+            "/api/invoices/" + row["id"], json={"data": row["payload"], "version": row["version"]}
+        ).status_code
+        == 200
+    )
+    assert client.get("/api/workspace").json()["run"]["stale"] is True
+    session = client.cookies.get("reconflow_session").split(".")[0]
+    with pytest.raises(ValueError, match="geändert"):
+        service.run_reconciliation(session, {}, {row["id"]: row["version"]})
 
 
 def test_end_to_end_seed_match_export(client):
@@ -199,6 +254,7 @@ def test_budget_reservation_is_atomic(monkeypatch):
     month = "test-" + str(uuid.uuid4())
     monkeypatch.setattr(ai, "period", lambda: month)
     monkeypatch.setattr(settings(), "ai_monthly_budget_eur", Decimal("0.25"))
+    monkeypatch.setattr(settings(), "openai_api_key", SecretStr("not-a-real-key"))
     monkeypatch.setattr(settings(), "ai_context_token_ceiling", 1050000)
 
     def reserve(_):

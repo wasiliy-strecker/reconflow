@@ -18,3 +18,18 @@
 - Live OpenAI evaluation: three synthetic documents (PDF, PNG, JPEG), 27/27 checked
   header fields correct. Estimated usage cost EUR 0.00122045. Report in
   `docs/evaluation/latest.json`; a small smoke evaluation, not an accuracy guarantee.
+
+## 2026-11-13 09:34 CET — Validated application and browser workflow
+
+- Area: ReconFlow application, branch `main`.
+- Indexed deterministic reference matching; measured 50,000 invoices/payments in 3.165 seconds.
+- Added stale-run detection, server Decimal totals, atomic manual version checks and candidate-snapshot job keys.
+- Made local bootstrap repeatable and documents persistent across Moto restarts.
+- Added bounded request streams, public-fixture checks, keyboard modal handling and formatted frontend sources.
+- Set Standard OpenAI processing with explicit cache mode and no breakpoints to avoid cache-write charges.
+- Files: backend, frontend, tests, Compose, scripts, evaluation reports and screenshots.
+- Validation: 44 Python tests passed with no real API key; production frontend build passed.
+- Browser flow passed on desktop/mobile, including real extraction and AI proposal before the final cache-mode change.
+- Final cache-mode extraction evaluated separately: PDF/PNG/JPEG, 27/27 header fields, estimated EUR 0.00135355.
+- Full Docker images built successfully; final source-only layers reused those dependency images because the host disk is nearly full.
+- Only reproducible package/build caches were cleaned; existing project data was preserved.

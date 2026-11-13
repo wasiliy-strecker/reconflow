@@ -5,6 +5,7 @@ x-backend: &backend
     dockerfile: backend/Dockerfile
   image: reconflow-backend:local
   env_file: .env
+  volumes: [documents-data:/var/task/.local-data]
   environment: &environment
     DATABASE_URL: postgresql://reconflow:reconflow@db:5432/reconflow
     AWS_ENDPOINT_URL: http://aws:5000
@@ -67,3 +68,4 @@ services:
 
 volumes:
   postgres-data:
+  documents-data:

@@ -2,8 +2,10 @@ import hashlib
 import io
 import json
 import warnings
+from pathlib import Path
 
 import boto3
+from botocore.exceptions import ClientError
 from PIL import Image
 from pypdf import PdfReader
 
@@ -63,10 +65,26 @@ def put(key, content, mime):
         ContentType=mime,
         ServerSideEncryption="AES256",
     )
+    if settings().aws_endpoint_url:
+        path = Path(settings().local_document_root) / key
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        path.write_bytes(content)
+        path.chmod(0o600)
 
 
 def get(key):
-    return client("s3").get_object(Bucket=settings().s3_bucket, Key=key)["Body"].read()
+    try:
+        return client("s3").get_object(Bucket=settings().s3_bucket, Key=key)["Body"].read()
+    except ClientError as exc:
+        # Moto is ephemeral. The private local volume survives Compose restarts.
+        if settings().aws_endpoint_url and exc.response["Error"]["Code"] in {
+            "NoSuchKey",
+            "NoSuchBucket",
+        }:
+            path = Path(settings().local_document_root) / key
+            if path.is_file():
+                return path.read_bytes()
+        raise
 
 
 def enqueue(job_id):

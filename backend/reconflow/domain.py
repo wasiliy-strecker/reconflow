@@ -185,12 +185,27 @@ def reconcile(invoices: list[dict], payments: list[dict], decisions: dict | None
     decisions = decisions or {}
     results, assigned = [], {}
     valid = {row["id"]: row for row in invoices if row["confirmed"]}
+    references, amounts = {}, {}
+    for row in valid.values():
+        data = row["payload"]
+        key = "".join(re.findall(r"[A-Z0-9]+", (data.get("invoice_number") or "").upper()))
+        if key:
+            references.setdefault(key, []).append(row)
+        amounts.setdefault((data["currency"], money(data["gross_amount"])), []).append(row)
+    longest = max(map(len, references), default=0)
     for payment in payments:
-        candidates = [
-            row
-            for row in valid.values()
-            if reference_matches(row["payload"].get("invoice_number") or "", payment["reference"])
-        ]
+        possible = {}
+        tokens = re.findall(r"[A-Z0-9]+", payment["reference"].upper())
+        for start in range(len(tokens)):
+            key = ""
+            for token in tokens[start:]:
+                key += token
+                if len(key) > longest:
+                    break
+                for row in references.get(key, []):
+                    if reference_matches(row["payload"]["invoice_number"], payment["reference"]):
+                        possible[row["id"]] = row
+        candidates = list(possible.values())
         manual = decisions.get(payment["id"])
         if manual in valid:
             candidates = [valid[manual]]
@@ -206,12 +221,7 @@ def reconcile(invoices: list[dict], payments: list[dict], decisions: dict | None
         if len(candidates) == 1:
             reason_code, reason = "CURRENCY_MISMATCH", "Referenz passt, aber die Währung weicht ab."
         if not candidates:
-            candidates = [
-                row
-                for row in valid.values()
-                if row["payload"]["currency"] == payment["currency"]
-                and money(row["payload"]["gross_amount"]) == money(payment["amount"])
-            ]
+            candidates = amounts.get((payment["currency"], money(payment["amount"])), [])
         results.append(
             MatchResult(
                 invoice_id=None,
@@ -247,6 +257,11 @@ def reconcile(invoices: list[dict], payments: list[dict], decisions: dict | None
                     "REFERENCE_AMOUNT_CURRENCY",
                     "Referenz, Gesamtbetrag und Währung stimmen überein.",
                 )
+                if any(decisions.get(p["id"]) == invoice["id"] for p in linked):
+                    code = "MANUAL_DECISION"
+                    reason = (
+                        "Vom Benutzer bestätigte Zuordnung. Betrag und Währung stimmen überein."
+                    )
             elif received < expected:
                 status, code, reason = (
                     "PARTIAL",

@@ -19,3 +19,5 @@ playwright-report/
 !*.tfvars.example
 artifacts/private/
 *.egg-info/
+.local-data/
+*.plan

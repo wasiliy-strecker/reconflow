@@ -41,7 +41,8 @@ Budget reservations use an atomic monthly ledger in Europe/Berlin. The configure
 budget defaults to 10. A conservative USD/EUR multiplier of 1.10 and full model-context
 reservation include the long-context price multiplier. After a response, actual input
 and output token usage replaces the reservation. Unknown outcomes retain their reservation.
-Cached-input discounts are deliberately ignored. Prices and exchange assumptions are
+Explicit cache mode without breakpoints disables prompt-cache reads/writes for these
+one-shot documents. Standard service tier is selected explicitly. Prices and exchange assumptions are
 configuration, not live billing data. Other applications using the same API key are outside
 this ledger. Changing model requires reviewing its limits and updating the configured prices.
 
@@ -69,6 +70,8 @@ five PDF pages and 20 megapixels for images. Only PDF/JPEG/PNG are accepted afte
 Each session has a signed HttpOnly cookie, CSRF token, 24-hour expiry and separately scoped IDs.
 Expired SQL rows are deleted on later admission. S3 lifecycle handles eventual object cleanup.
 Original files are served through the session-authorized API, not public bucket URLs.
+Locally, a private Docker document volume provides a fallback after Moto loses its
+in-memory objects. Local volumes are retained until explicitly removed by the operator.
 The static first screen does not query the database. No keep-alive pinger is used.
 
 ## Deployment boundary
