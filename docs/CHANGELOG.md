@@ -45,3 +45,26 @@
 - Validation: both Terraform modules initialized with signed locked AWS provider 6.73.0 and passed validate; recursive fmt and workflow YAML parsing passed. Provider storage used temporary container memory due host disk pressure.
 - No terraform plan/apply against AWS, remote GitHub workflow run, Git push, public publication or Marketplace submission was performed.
 - Final application browser test passed again against the final source layers. Compose services remain available locally.
+
+## 2026-11-14 09:22 CET — Local AWS Agent Toolkit and Codex connection
+
+- Area: ReconFlow development tooling and AWS documentation, branch `main`.
+- Installed AWS CLI 2.40.3 for the local user with the official GPG-verified installer.
+  Configured profile `portfolio` for the new AWS experience in `eu-north-1` and
+  completed browser login. The toolkit itself uses its `us-east-1` service endpoint.
+- Configured Codex only, installed 25 default AWS skills and set
+  `AWS_MCP_PROXY_PROFILES=portfolio` in the local MCP configuration. Preserved a private
+  configuration backup and verified all pre-existing Codex settings were unchanged.
+- Verification: authenticated STS identity and plan queries succeeded; the toolkit
+  catalog returned 123 skills; an independent MCP handshake and tool listing succeeded
+  with 8 tools. Verified the profile region, config mode 0600, preserved original
+  project instructions and a single marked AWS guidance block. `git diff --check` passed.
+- The plan query reported Free Plan, active, positive remaining credits at setup time.
+  No application resources, paid-plan upgrade or advanced-feature activation were made.
+- Files: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/AWS_RUNBOOK.md`,
+  `docs/CHANGELOG.md`, `docs/licenses/AWS_AGENT_TOOLKIT_LICENSE.txt`,
+  `docs/licenses/AWS_AGENT_TOOLKIT_NOTICE.txt`. User-local binaries, skills and
+  configuration are outside Git; credentials and authentication caches were not committed.
+- Existing Frankfurt deployment templates still require a coordinated compatibility
+  and region update before deployment to Stockholm. Restart Codex to load its new tools
+  and skills. No application code changed, so application tests were not rerun.

@@ -76,6 +76,13 @@ The static first screen does not query the database. No keep-alive pinger is use
 
 ## Deployment boundary
 
+The user selected the new AWS experience in Stockholm (`eu-north-1`) on 2026-11-14.
+Local access uses the named CLI profile `portfolio` and browser-based `aws login`.
+The Agent Toolkit service uses `us-east-1`; application resources belong in Stockholm.
+The initial Frankfurt Terraform/workflow templates require a separate compatibility
+and region update before deployment. See `AWS_RUNBOOK.md` for the selected project
+and setup status. Toolkit setup does not authorize provisioning or an AWS plan upgrade.
+
 The implementation request authorizes local development and bounded OpenAI evaluation.
 It does not yet authorize paid AWS provisioning, DNS changes, GitHub publication or Marketplace
 submission. Prepare and validate these artifacts locally. Obtain approval only after the

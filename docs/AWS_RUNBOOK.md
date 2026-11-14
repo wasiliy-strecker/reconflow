@@ -4,6 +4,50 @@ Status: configuration validated locally, no AWS resources created. Use this runb
 only after the owner approves the reviewed deployment and cost assumptions.
 There is no Marketplace submission or public GitHub repository yet.
 
+## Selected AWS project and local access — 2026-11-14
+
+The owner selected the new AWS experience and the existing project **the selected portfolio project**
+in **eu-north-1 (Stockholm)**. The local AWS CLI profile is **portfolio**, a reusable
+login label that can serve multiple applications in this AWS project. Separate AWS
+projects can receive additional named profiles later.
+
+AWS CLI 2.40.3 was installed for the local user with the official installer and GPG
+signature verification. Browser login and STS identity verification succeeded. The
+read-only plan query reported an active Free Plan with positive credits on this date;
+this is a point-in-time observation, not a permanent balance or entitlement.
+
+Renew local access through the browser when required:
+
+```bash
+aws login --region eu-north-1 --profile portfolio
+aws sts get-caller-identity --profile portfolio
+```
+
+The Agent Toolkit uses its service endpoint in **us-east-1**, independently of the
+project's resource region. Its Codex MCP configuration must set
+`AWS_MCP_PROXY_PROFILES=portfolio`. Authentication remains in the local AWS login cache;
+no access keys or session tokens belong in this repository.
+
+The installer added 25 default skills under `~/.agents/skills/` and configured Codex
+only. The authenticated toolkit catalog returned 123 available skills. A separate MCP
+client successfully initialized the configured proxy and listed 8 tools, including
+documentation search/read and skill retrieval. These counts describe this setup check.
+Restart the Codex session so newly installed MCP tools and skills can be discovered
+there. The user prefers short progress messages with questions only for material
+ambiguity (`MEDIUM`).
+
+The original `~/.codex/config.toml` was backed up privately before setup. A semantic
+comparison confirmed that all pre-existing settings were preserved; only `aws-mcp`
+was added, with the profile environment setting above. The configuration remains mode
+0600. AWS setup guidance is recorded in `AGENTS.md`, with the upstream license and
+notice retained under `docs/licenses/`.
+
+**Deployment preparation below still targets Frankfurt. Do not execute it unchanged
+for this Stockholm project.** Before a separately authorized deployment, review the
+new-experience/Free-Plan service restrictions and adapt Terraform defaults, workflow
+regions, credentials, cost assumptions and commands together. No upgrade to Paid or
+Advanced and no application resource provisioning is part of the toolkit setup.
+
 ## Prerequisites and preflight
 
 - AWS CLI v2, an AWS account, SSO/operator credentials, Terraform 1.13.5 and Docker Buildx.
