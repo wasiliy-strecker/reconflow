@@ -166,3 +166,17 @@
 - Auto-pause/resume acceptance is still pending. Aurora instance logs report service
   maintenance/continuous backup lag; quiet-demo cost estimates remain conditional until
   zero-ACU idle behavior is observed. Deployment documentation records this limitation.
+
+## 2026-11-15 11:51 CET — Zero-ACU pause and browser resume verified
+
+- CloudWatch recorded minimum/maximum 0 ACU for the full 11:44 CET minute. The final
+  idle check used metrics only; direct instance-log diagnostics can themselves wake
+  an instance or delay pause, as now documented in the runbook.
+- A fresh public browser at 11:49 CET loaded six synthetic invoices 23.92 seconds after
+  Demo starten. Existing startup handling recovered from two temporary 503 responses;
+  subsequent session and seed calls succeeded, with no page errors or paid AI calls.
+  The acceptance session was removed. Long pauses exceeding 24 hours were not tested.
+- Updated README, architecture, runbook and cost notes to reflect successful idle/resume
+  acceptance. The owner explicitly requested keeping AWS reachable for personal tests.
+  Local health/config still pass with OpenAI enabled. Documentation diff checks passed;
+  no application or infrastructure configuration changed after their validated deployment.

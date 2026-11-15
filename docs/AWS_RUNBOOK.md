@@ -2,8 +2,8 @@
 
 Status: owner-approved Stockholm Free Plan test deployment completed on 2026-11-15.
 Test URL: **https://d33v3exmdsu4yz.cloudfront.net**. Real browser workflows, OpenAI
-and access-isolation checks passed. Auto-pause/resume acceptance is still pending;
-AWS service maintenance/backup lag initially blocked pause. GitHub publication,
+and access-isolation checks passed. Zero-ACU pause and browser resume were verified;
+initial service/diagnostic activity delayed the first pause. GitHub publication,
 Paid/Advanced upgrades, DNS changes and Marketplace submission remain outside scope.
 
 ## Selected project and verified access — 2026-11-15
@@ -38,6 +38,11 @@ Paid/Advanced upgrades, DNS changes and Marketplace submission remain outside sc
   CSV import, XLSX and mobile layout. No paid request was retried.
 - Both real AI calls completed. Ledger: EUR 0.00040359 estimated token cost,
   zero outstanding reservations. Local and AWS budget ledgers remain independent.
+- CloudWatch recorded a complete zero-ACU minute at 11:44 CET. A fresh browser at
+  11:49 CET loaded all six invoices in 23.92 s after clicking Demo starten. Two
+  temporary 503 responses were handled by the existing startup retry UI, followed
+  by successful session creation and seed. No browser errors or paid calls occurred;
+  the test session was deleted. This measures a short pause, not deep sleep over 24 h.
 - Two isolated clients verified document/job/run/report isolation, secure cookies,
   Origin and CSRF checks, fixture enforcement, no-store API/original responses and
   blocked unauthenticated access to actual objects in both S3 buckets.
@@ -47,6 +52,8 @@ Paid/Advanced upgrades, DNS changes and Marketplace submission remain outside sc
 - Private deployment plans and acceptance receipts are under
   `artifacts/private/aws-deploy/` (ignored). Secret payloads and recipient email are
   not recorded in these committed documents. Do not delete ignored bootstrap state.
+- The owner chose to keep this environment reachable for personal testing. Cleanup
+  remains a separately requested operation.
 
 Confirm the selected Region in **AWS Settings > View all projects > Overview >
 Additional Info > Region**. Check plan/credit status in **AWS Settings > Billing**.
@@ -212,6 +219,10 @@ should query the database, because it prevents auto-pause.
 - Fixture-only upload enforcement, CSRF, API throttling, SQS limit and AI reservations
   hold. Duplicate SQS messages and unknown AI outcomes do not automatically repeat a call.
 - Let the database idle over five minutes, observe zero ACUs and measure resume behavior.
+  Observe only CloudWatch capacity metrics and RDS events during this interval. Do not
+  list/download instance log files: those administrative operations can wake a paused
+  instance or delay the next pause. After an administrative wake-up, AWS waits at least
+  20 minutes before another pause. See [Aurora pause/resume behavior](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html).
   If resumption exceeds the API deadline, inspect the failed request before retrying;
   do not advertise the demo until resume behavior is acceptable.
 - Inspect actual credit use, Lambda errors and DLQ metrics. The two CloudWatch alarms

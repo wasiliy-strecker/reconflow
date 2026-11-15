@@ -47,10 +47,12 @@ For a very quiet demo a provisional **USD 3–7/month AWS credit-consumption all
 these assumptions; it is not a promise. More traffic, abusive callers or activity that
 prevents pause can cost substantially more. Account costs unrelated to ReconFlow are excluded.
 
-Initial deployment observation: Aurora's instance log reports service maintenance and
-continuous backup lag as auto-pause blockers. Zero-ACU pause and resume have not yet
-been observed. Until that check passes, the quiet-demo estimate is conditional; the
-always-active upper-bound scenario remains relevant. The Free Plan stays active.
+Initial deployment observation: service/diagnostic activity and continuous backup lag
+delayed the first pause. CloudWatch then confirmed a complete zero-ACU minute at
+11:44 CET; the fresh browser's next Demo starten took 23.92 seconds. The quiet-demo
+estimate remains workload-dependent, and maintenance can extend active periods.
+Diagnostic instance-log reads can themselves delay pause; observe idle behavior with
+CloudWatch metrics rather than repeatedly listing/downloading instance logs.
 
 Official references: [Aurora auto-pause](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html),
 [Secrets Manager pricing](https://aws.amazon.com/secrets-manager/pricing/),

@@ -94,8 +94,9 @@ Messprotokolle: [KI-Evaluation](docs/evaluation/latest.json), [Benchmark](docs/e
 Die AWS-Testumgebung wurde am 15.11.2026 provisioniert und im Browser einschließlich
 zweier echter OpenAI-Aufrufe geprüft. Getestet wurden außerdem Sitzungstrennung,
 CSRF/Origin-Schutz, Beispiel-Dateigrenzen und gesperrter direkter S3-Zugriff.
-Terraform meldet nach dem Deployment keine Abweichungen. Der Auto-Pause-/Wiederanlauftest
-ist noch offen: AWS-Hintergrundarbeiten verzögerten zunächst das Pausieren.
+Terraform meldet nach dem Deployment keine Abweichungen. Die Datenbank pausierte
+nachweislich auf 0 ACU; der anschließende Browserstart benötigte rund 24 Sekunden.
+Nach einer Ruhephase daher kurz auf das Laden der Beispieldaten warten.
 Die GitHub-Workflows sind vorbereitet, aber noch nicht auf GitHub ausgeführt.
 
 ## Entwickeln und testen

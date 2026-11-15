@@ -115,3 +115,10 @@ The owner approved the Stockholm AWS test deployment on 2026-11-15 while remaini
 the active Free Plan and retaining bounded OpenAI use. The budget recipient is stored
 only in ignored operator configuration. No Paid/Advanced upgrade, DNS changes, GitHub
 publication or Marketplace submission is authorized. AWS budget alerts are not a hard cap.
+After the deployment tests, the owner explicitly chose to keep the AWS environment
+reachable for personal testing. Cleanup requires a later instruction; no automatic
+destructive cleanup or plan upgrade is scheduled.
+The first AWS acceptance observed zero-ACU pause and a 23.92-second browser startup
+from that pause. The UI handled transient 503 responses before creating the session;
+no AI request was part of that resume test. Use CloudWatch metrics to measure idle
+capacity, because direct instance-log diagnostics can interfere with auto-pause.
