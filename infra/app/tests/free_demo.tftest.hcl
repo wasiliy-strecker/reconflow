@@ -6,7 +6,7 @@ mock_provider "aws" {
     defaults = {
       arn                                 = "arn:aws:rds:eu-north-1:123456789012:cluster:reconflow"
       engine                              = "aurora-postgresql"
-      database_name                       = "reconflow"
+      database_name                       = ""
       iam_database_authentication_enabled = true
       deletion_protection                 = true
       tags                                = { ManagedBy = "reconflow-free-demo" }
@@ -24,6 +24,10 @@ variables {
 
 run "free_plan_defaults" {
   command = plan
+  assert {
+    condition     = !aws_budgets_budget.account.cost_types[0].include_credit && !aws_budgets_budget.account.cost_types[0].include_refund
+    error_message = "Free Plan credits and refunds must not mask usage in the budget alert."
+  }
   assert {
     condition     = length(aws_iam_openid_connect_provider.github) == 0 && length(aws_iam_role.deploy) == 0 && length(aws_iam_role_policy.deploy) == 0
     error_message = "Free Plan deployment must not request GitHub OIDC or a GitHub deployment role."

@@ -91,6 +91,11 @@ resource "aws_budgets_budget" "account" {
   limit_amount = tostring(var.monthly_aws_alert_usd)
   limit_unit   = "USD"
   time_unit    = "MONTHLY"
+  # Credits must not conceal metered usage while testing on the Free Plan.
+  cost_types {
+    include_credit = false
+    include_refund = false
+  }
   notification {
     comparison_operator        = "GREATER_THAN"
     notification_type          = "ACTUAL"

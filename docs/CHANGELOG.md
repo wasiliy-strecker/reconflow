@@ -125,3 +125,18 @@
   resources were created (private encrypted/versioned state bucket and ECR configuration).
 - Free Plan remains ACTIVE; AWS now reports positive credits. No tariff or advanced
   feature change was requested. Application rollout and public acceptance checks follow.
+
+## 2026-11-15 11:24 CET — Budget visibility and Terraform login compatibility
+
+- Excluded credits/refunds from the USD 15 monthly awareness budget so Free Plan
+  credits do not mask metered consumption before the 80-percent email threshold.
+  This changes alert calculation only, not the Free Plan or payable invoice.
+- Documented the short-lived credential handoff needed by Terraform 1.13.5's S3
+  backend. Real remote-state initialization succeeded with credentials only in the
+  subprocess environment; no credentials were saved in files or arguments.
+- All four mocked application Terraform tests passed, including the credit-exclusion
+  assertion and an Express cluster without initial-database metadata. Formatting and
+  diff checks passed; TypeScript and production frontend build also passed.
+- The seed/reconciliation/XLSX integration test passed against real Aurora Data API.
+  File storage and queue dispatch were mocked for this focused SQL parity check;
+  complete deployed-service acceptance remains a separate step. No OpenAI call made.

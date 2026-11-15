@@ -54,6 +54,9 @@ Official references: [Aurora auto-pause](https://docs.aws.amazon.com/AmazonRDS/l
 
 Terraform includes a USD 15 **account-wide** monthly awareness budget, alerting at 80%.
 It intentionally includes all account usage so existing unrelated services also appear.
+Credits and refunds are excluded from the calculation, so they do not conceal metered
+usage. This alert amount is not the payable Free Plan invoice amount. See
+[AWS Budgets cost types](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_budgets_CostTypes.html).
 This sends notifications only; it does not stop charges. API throttles and maximum ACUs
 limit load but do not impose a fixed invoice maximum.
 

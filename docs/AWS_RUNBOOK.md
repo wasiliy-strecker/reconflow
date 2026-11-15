@@ -105,7 +105,14 @@ wire logs or database queries containing passwords into release artifacts.
 
 ### 2. Bootstrap state and ECR
 
+Terraform 1.13.5's embedded S3-backend SDK does not understand this profile's
+`aws login` credentials, although the current provider does. Export the short-lived
+credentials into the operator shell before Terraform commands; never print, log or
+save the export. Repeat after expiration. The deployment used the equivalent SDK
+in-memory environment handoff to Terraform subprocesses.
+
 ```bash
+eval "$(aws configure export-credentials --profile portfolio --format env)"
 terraform -chdir=infra/bootstrap init -input=false -lockfile=readonly
 terraform -chdir=infra/bootstrap plan -out=bootstrap.plan
 # Inspect the saved plan before applying it.
