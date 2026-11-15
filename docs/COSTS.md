@@ -1,13 +1,13 @@
 # Cost assumptions — reviewed 2026-11-15
 
-No ReconFlow application resources have been provisioned in the selected AWS project. The following is a planning estimate,
+ReconFlow was deployed to the selected AWS project on 2026-11-15. The following is a planning estimate,
 not an AWS quote or a guaranteed monthly cap. USD amounts exclude tax, currency changes,
 free-tier allowances and account credits. OpenAI billing is separate.
 
 ## Free Plan and payment boundary
 
 The owner wants AWS testing without an AWS payment while continuing to use paid OpenAI.
-The authenticated 2026-11-15 query confirmed ACTIVE FREE, positive credits remaining,
+The authenticated post-deployment 2026-11-15 query confirmed ACTIVE FREE, positive credits remaining,
 expiry <private-plan-expiry>. This is a snapshot, not an ongoing balance guarantee.
 While the Free Plan is active, eligible usage consumes credits/free allowances rather
 than producing a payable AWS bill. It ends at expiry or credit exhaustion. No upgrade
@@ -46,6 +46,11 @@ usage for S3, state versions, ECR, CloudFront transfer, Lambda, HTTP API, SQS, l
 For a very quiet demo a provisional **USD 3–7/month AWS credit-consumption allowance** is plausible under
 these assumptions; it is not a promise. More traffic, abusive callers or activity that
 prevents pause can cost substantially more. Account costs unrelated to ReconFlow are excluded.
+
+Initial deployment observation: Aurora's instance log reports service maintenance and
+continuous backup lag as auto-pause blockers. Zero-ACU pause and resume have not yet
+been observed. Until that check passes, the quiet-demo estimate is conditional; the
+always-active upper-bound scenario remains relevant. The Free Plan stays active.
 
 Official references: [Aurora auto-pause](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html),
 [Secrets Manager pricing](https://aws.amazon.com/secrets-manager/pricing/),
@@ -86,6 +91,10 @@ Measured three-document smoke evaluation: **EUR 0.00135355 estimated token cost*
 using 6,070 input and 1,247 output tokens. See the saved usage report. Additional browser
 checks made separate bounded calls. This is a model of token cost, not a downloaded
 provider invoice. Real files and different models can cost more.
+
+The first AWS browser acceptance on 2026-11-15 completed exactly two paid calls
+(extraction and suggestion): 1,234 input / 487 output tokens, **EUR 0.00040359**
+estimated cost. The AWS ledger has zero outstanding reservations after this test.
 
 The ledger covers ReconFlow only. It cannot stop other applications using the same
 OpenAI key, and deleting the database resets its local accounting. Use a dedicated

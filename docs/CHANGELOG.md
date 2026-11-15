@@ -140,3 +140,29 @@
 - The seed/reconciliation/XLSX integration test passed against real Aurora Data API.
   File storage and queue dispatch were mocked for this focused SQL parity check;
   complete deployed-service acceptance remains a separate step. No OpenAI call made.
+
+## 2026-11-15 11:38 CET — Stockholm AWS deployment and public workflow acceptance
+
+- Deployed the owner-approved test stack on the existing Free Plan: six bootstrap
+  resources, 34 application resources, the external Express cluster/writer and three
+  secrets. Public test URL: https://d33v3exmdsu4yz.cloudfront.net.
+- Uploaded the immutable linux/amd64 image from runtime revision `4cd28b3` with digest
+  `sha256:8c1cde0c613604fcfbb7537598c7636294679c0d67ce155ccd7438f871873039`.
+  Published built frontend assets before index.html and invalidated the CloudFront entry.
+- Migration Lambda succeeded twice; a subsequent real Terraform plan found no drift.
+  Real browser tests passed both without AI and with exactly two paid OpenAI requests.
+  Extraction, confirmation, reconciliation, suggestion, manual assignment, CSV deduplication,
+  XLSX export and mobile layout worked through CloudFront/API Gateway/Lambda/SQS/Data API.
+- Verified two-client document/job/run/report isolation, CSRF/Origin enforcement,
+  fixture-only uploads, no-store responses and denied anonymous S3 object access.
+  Test sessions were removed; synthetic S3 objects expire through the configured lifecycle.
+- AI ledger records 1,234 input / 487 output tokens, EUR 0.00040359 estimated cost,
+  both calls completed and no outstanding reservations. No ambiguous paid request repeated.
+- All functions active, queues/DLQ empty, no ERROR/timeout records in the inspected Lambda
+  logs. Budget amount, credit exclusion, 80-percent threshold and selected recipient verified.
+- Post-deployment plan query remains ACTIVE FREE, positive credits, expiry <private-plan-expiry>.
+  No Paid/Advanced upgrade, DNS change or GitHub publication occurred. Keys, email,
+  Terraform state and private acceptance receipts remain outside Git.
+- Auto-pause/resume acceptance is still pending. Aurora instance logs report service
+  maintenance/continuous backup lag; quiet-demo cost estimates remain conditional until
+  zero-ACU idle behavior is observed. Deployment documentation records this limitation.

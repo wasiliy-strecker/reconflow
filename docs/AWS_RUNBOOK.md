@@ -1,9 +1,10 @@
 # AWS deployment and operations
 
-Status: Stockholm / Free Plan preparation implemented locally; no ReconFlow AWS
-resources have been created. Run the provisioning sections only after the owner
-approves the reviewed deployment. GitHub publication, Paid/Advanced upgrades, DNS
-changes and Marketplace submission are not part of this preparation.
+Status: owner-approved Stockholm Free Plan test deployment completed on 2026-11-15.
+Test URL: **https://d33v3exmdsu4yz.cloudfront.net**. Real browser workflows, OpenAI
+and access-isolation checks passed. Auto-pause/resume acceptance is still pending;
+AWS service maintenance/backup lag initially blocked pause. GitHub publication,
+Paid/Advanced upgrades, DNS changes and Marketplace submission remain outside scope.
 
 ## Selected project and verified access — 2026-11-15
 
@@ -11,17 +12,41 @@ changes and Marketplace submission are not part of this preparation.
   (Stockholm)**, local CLI profile **portfolio**. The profile is a reusable login
   label, not an application name.
 - AWS CLI 2.40.3, Terraform 1.13.5, locked AWS provider 6.73.0. Browser login and STS
-  succeeded. Free Plan query: ACTIVE, positive remaining credits, expiry
+  succeeded. Post-deployment Free Plan query: ACTIVE, positive remaining credits, expiry
   <private-plan-expiry>. These are point-in-time observations.
 - Aurora PostgreSQL 17.7 is available with zero-ACU support. Express does not accept
   an engine version pin: the current default is **17.9**, also supporting zero ACUs.
   The preparation command resolves and checks the current default on every new setup.
-- Lambda has 10 total/unreserved concurrent executions and no functions yet.
+- Lambda has 10 total/unreserved concurrent executions and three active functions.
   Application functions therefore use the shared pool; SQS maximum concurrency is 2.
   Reserving five slots would fail because AWS requires 100 slots to remain unreserved.
 - Listing IAM OIDC providers was denied by a managed SCP, including at the global
   endpoint. GitHub OIDC resources are disabled by default. No policies were changed.
-- No Aurora clusters or ECR repositories were present during the check.
+- The initial inventory was empty. ReconFlow now owns one Express cluster/writer,
+  three secrets, the six bootstrap resources and 34 application Terraform resources.
+
+## Deployment verification — 2026-11-15
+
+- Distribution `<distribution-id>`, all regional application resources in Stockholm.
+  Runtime source revision `4cd28b39a6f8081d29d82c9d029ce106508d835e`; later commits
+  changed operator tooling, infrastructure and documentation only. Immutable image:
+  `sha256:8c1cde0c613604fcfbb7537598c7636294679c0d67ce155ccd7438f871873039`.
+- Migration Lambda invoked twice successfully: `{"ok":true}`, 4.72 s then 0.41 s
+  measured from the operator. A subsequent real Terraform plan reports no changes.
+- Public browser flow passed without AI (25.2 s), then with one extraction and one
+  suggestion (36.7 s), including confirmation, reconciliation, manual assignment,
+  CSV import, XLSX and mobile layout. No paid request was retried.
+- Both real AI calls completed. Ledger: EUR 0.00040359 estimated token cost,
+  zero outstanding reservations. Local and AWS budget ledgers remain independent.
+- Two isolated clients verified document/job/run/report isolation, secure cookies,
+  Origin and CSRF checks, fixture enforcement, no-store API/original responses and
+  blocked unauthenticated access to actual objects in both S3 buckets.
+- All three Lambda functions are active; queues/DLQ are empty. The inspected Lambda
+  logs contain no ERROR or timeout records. The USD 15 / 80-percent budget and the
+  operator-selected email recipient are confirmed through the AWS API.
+- Private deployment plans and acceptance receipts are under
+  `artifacts/private/aws-deploy/` (ignored). Secret payloads and recipient email are
+  not recorded in these committed documents. Do not delete ignored bootstrap state.
 
 Confirm the selected Region in **AWS Settings > View all projects > Overview >
 Additional Info > Region**. Check plan/credit status in **AWS Settings > Billing**.

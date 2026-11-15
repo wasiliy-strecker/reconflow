@@ -3,11 +3,14 @@
 **Rechnungen mit KI auslesen. Angaben prüfen. Zahlungseingänge nachvollziehbar abgleichen.**
 
 Ein eigenständiges Portfolio-Projekt von wasiliy-strecker mit Python, FastAPI,
-PostgreSQL, OpenAI, Docker und vorbereiteter AWS-Infrastruktur.
+PostgreSQL, OpenAI, Docker und einer AWS-Testumgebung in Stockholm.
 
 ![ReconFlow Zahlungsabgleich](docs/screenshot.png)
 
 ## Ausprobieren
+
+AWS-Test: **https://d33v3exmdsu4yz.cloudfront.net**. Dort **Demo starten** wählen.
+Die öffentliche Umgebung akzeptiert ausschließlich synthetische Beispieldateien.
 
 Voraussetzung: Docker Engine mit Compose und Buildx. Mindestens 3 GB freier
 Speicherplatz für Images und Build-Caches. Ein OpenAI-Schlüssel ist für die
@@ -32,11 +35,11 @@ Setup, API, Worker und Frontend sind enthalten. Das Setup darf erfolgreich mit E
 
 Vorbefüllte Beispieldaten sind ausdrücklich als **Beispielwerte** gekennzeichnet.
 KI-Ergebnisse werden niemals automatisch bestätigt oder als Buchung ausgeführt.
-Eigene PDF/JPG/PNG und CSV sind nur im lokalen Modus erlaubt. Das vorbereitete
-öffentliche AWS-Demo akzeptiert ausschließlich die enthaltenen synthetischen Dateien.
+Eigene PDF/JPG/PNG und CSV sind nur im lokalen Modus erlaubt. Die öffentliche
+AWS-Demo akzeptiert ausschließlich die enthaltenen synthetischen Dateien.
 
-Für den ersten AWS-Test bleibt der bestehende **Free Plan** erhalten. Die vorbereitete
-Stockholm-Konfiguration verwendet Aurora Express; GitHub-OIDC ist zunächst deaktiviert.
+Der AWS-Test läuft im bestehenden **Free Plan**. Die Stockholm-Konfiguration
+verwendet Aurora Express; GitHub-OIDC ist zunächst deaktiviert.
 OpenAI bleibt separat kostenpflichtig und mit dem bestehenden Budget nutzbar.
 Den AWS-Zugang prüfst du ohne Ressourcenerstellung mit:
 
@@ -69,7 +72,7 @@ demselben Container-Image mit unterschiedlichen Einstiegspunkten.
 - **OpenAI:** strukturierte PDF-/Bilderkennung, Fundstellen und begrenzte Zuordnungsvorschläge.
 - **Decimal-Abgleich:** Referenz und Währung, Teilzahlungen, Mehrdeutigkeit und Überzahlungen.
 - **Docker Compose:** vollständige lokale Umgebung mit getrenntem API- und Worker-Prozess.
-- **AWS-Vorbereitung:** Lambda, Aurora Serverless v2 mit Auto-Pause, S3, SQS und Terraform.
+- **AWS-Testumgebung:** Lambda, Aurora Serverless v2, S3, SQS und Terraform.
 - **CI/CD:** automatische Tests und ein manuell gestarteter AWS-Release per GitHub OIDC.
 
 Details: [Architektur](docs/ARCHITECTURE.md), [Dateiformate](docs/DATA_FORMATS.md),
@@ -88,9 +91,12 @@ Details: [Architektur](docs/ARCHITECTURE.md), [Dateiformate](docs/DATA_FORMATS.m
 - Produktions-Frontend und Docker-Images gebaut. Beide Terraform-Module lokal validiert.
 
 Messprotokolle: [KI-Evaluation](docs/evaluation/latest.json), [Benchmark](docs/evaluation/benchmark.json).
-AWS-Zugang, Free Plan und Stockholm-Verfügbarkeit wurden lesend geprüft.
-Die Anwendung wurde **noch nicht auf AWS provisioniert oder dort getestet**. Die Workflows sind vorbereitet,
-aber noch nicht auf GitHub ausgeführt. Eine öffentliche Demo-URL folgt erst mit einem AWS-Deployment.
+Die AWS-Testumgebung wurde am 15.11.2026 provisioniert und im Browser einschließlich
+zweier echter OpenAI-Aufrufe geprüft. Getestet wurden außerdem Sitzungstrennung,
+CSRF/Origin-Schutz, Beispiel-Dateigrenzen und gesperrter direkter S3-Zugriff.
+Terraform meldet nach dem Deployment keine Abweichungen. Der Auto-Pause-/Wiederanlauftest
+ist noch offen: AWS-Hintergrundarbeiten verzögerten zunächst das Pausieren.
+Die GitHub-Workflows sind vorbereitet, aber noch nicht auf GitHub ausgeführt.
 
 ## Entwickeln und testen
 
