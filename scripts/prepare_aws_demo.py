@@ -8,6 +8,7 @@ import argparse
 import json
 import re
 import secrets
+import ssl
 import sys
 import time
 from datetime import UTC, datetime
@@ -222,13 +223,18 @@ def configure_sql_user(aws, cluster, credentials):
     # Express cannot create an initial database through CreateDBCluster. CREATE
     # DATABASE must run outside a transaction; the session lock serializes setup.
     # Express uses public AWS trust roots. Verify both certificate and hostname.
+    ca_file = ssl.get_default_verify_paths().cafile
+    if not ca_file:
+        raise ValueError("Install a system CA bundle before connecting to Aurora Express.")
     connection_options = {
         "host": cluster["Endpoint"],
         "port": cluster["Port"],
         "user": cluster["MasterUsername"],
         "password": token,
         "sslmode": "verify-full",
-        "sslrootcert": "system",
+        # The binary psycopg wheel's bundled OpenSSL can resolve 'system' to a
+        # different, absent CA directory. Use Python's verified system bundle.
+        "sslrootcert": ca_file,
         "connect_timeout": 30,
     }
     with psycopg.connect(**connection_options, dbname="postgres", autocommit=True) as admin:

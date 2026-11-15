@@ -112,3 +112,16 @@
 - Verification: all eleven preparation tests passed, including real local database
   creation, repeated setup, password preservation and restricted role privileges.
   Ruff and all four application Terraform tests passed. Frontend was unaffected.
+
+## 2026-11-15 11:14 CET — Aurora preparation and deployment bootstrap verified
+
+- Created the authorized Stockholm Express cluster, SQL database and restricted SQL
+  user, enabled Data API and created three tagged secrets. Real Data API `SELECT 1`
+  succeeded. Aurora PostgreSQL is 17.9 with 0–1 ACU, 300-second pause and deletion protection.
+- Corrected local TLS trust discovery: the binary psycopg wheel's OpenSSL did not
+  resolve `sslrootcert=system` to the installed trust store. Preparation now explicitly
+  uses Python's system CA bundle with hostname verification; real IAM login succeeded.
+- All eleven preparation tests and Ruff check/format passed. The six reviewed bootstrap
+  resources were created (private encrypted/versioned state bucket and ECR configuration).
+- Free Plan remains ACTIVE; AWS now reports positive credits. No tariff or advanced
+  feature change was requested. Application rollout and public acceptance checks follow.

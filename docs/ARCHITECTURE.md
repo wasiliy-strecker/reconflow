@@ -111,7 +111,7 @@ is capped at 2. GitHub OIDC is optional and off by default due to the managed-po
 First deployment is from the local `portfolio` login. See `AWS_RUNBOOK.md` for verification,
 release and cleanup procedures. No Paid/Advanced upgrade is automated.
 
-The implementation request authorizes local development and bounded OpenAI evaluation.
-It does not yet authorize paid AWS provisioning, DNS changes, GitHub publication or Marketplace
-submission. Prepare and validate these artifacts locally. Obtain approval only after the
-release and its cost estimate are concrete. AWS budget alerts are not a hard billing cap.
+The owner approved the Stockholm AWS test deployment on 2026-11-15 while remaining on
+the active Free Plan and retaining bounded OpenAI use. The budget recipient is stored
+only in ignored operator configuration. No Paid/Advanced upgrade, DNS changes, GitHub
+publication or Marketplace submission is authorized. AWS budget alerts are not a hard cap.

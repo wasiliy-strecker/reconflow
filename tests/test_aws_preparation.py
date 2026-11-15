@@ -241,7 +241,7 @@ def test_sql_login_creation_reuses_password_and_grants_no_admin(monkeypatch):
 
     def local_connection(**kwargs):
         assert kwargs["sslmode"] == "verify-full"
-        assert kwargs["sslrootcert"] == "system"
+        assert kwargs["sslrootcert"] == prepare.ssl.get_default_verify_paths().cafile
         assert kwargs["password"] == "synthetic-iam-token"
         return connect(url, dbname=kwargs["dbname"], autocommit=kwargs.get("autocommit", False))
 
