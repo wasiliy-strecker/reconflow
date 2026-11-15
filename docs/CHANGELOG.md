@@ -68,3 +68,35 @@
 - Existing Frankfurt deployment templates still require a coordinated compatibility
   and region update before deployment to Stockholm. Restart Codex to load its new tools
   and skills. No application code changed, so application tests were not rerun.
+
+## 2026-11-15 10:18 CET — Stockholm Free Plan preparation with OpenAI retained
+
+- Replaced Frankfurt defaults in Terraform, backend, environment examples and deployment
+  workflow with Stockholm. Updated only the private local region; keys and EUR 10 AI
+  budget were preserved. Rebuilt/restarted local backend services without deleting volumes.
+- Prepared Aurora Express (0–1 ACU, 300-second auto-pause, deletion protection), an
+  application SQL login and three Secrets Manager secrets through an explicit operator
+  script. Its default is read-only; resource creation requires --apply and the expected
+  project ID. SDK login support uses the development-only boto3 CRT dependency.
+- Preparation rejects non-active/non-Free plans, exhausted credits, wrong region/project
+  and foreign resource ownership. It preserves existing secret values, uses verified TLS,
+  and does not retry ambiguous mutations automatically or expose secrets in output/state.
+- Terraform now reads the separately managed database, leaves Lambda concurrency unreserved
+  for the observed 10-slot quota, and disables GitHub OIDC by default. Added regional and
+  project checks, six mocked infrastructure plan tests and eleven preparation tests.
+- Updated architecture, deployment/cleanup instructions and Stockholm cost assumptions:
+  provisional USD 3–7 monthly AWS credit consumption for 20–100 short visits. OpenAI remains
+  separately billed; local and AWS SQL databases have independent budget ledgers.
+- Verification: 41 unit/adapter/preparation tests and 14 PostgreSQL/API integration tests
+  passed. Integration job dispatch was mocked so the running worker could not consume test
+  jobs; AI responses were simulated. The real local SQL-login setup was tested twice and
+  did not rotate its password or grant administrator privileges.
+- Ruff check/format, TypeScript, production frontend build, backend Docker build, workflow
+  YAML parsing, both Terraform validates and six mocked Terraform plan tests passed.
+  The browser flow passed against the restarted local stack without paid AI calls.
+- Authenticated read-only preflight confirmed ACTIVE FREE, positive credits, expiry
+  <private-plan-expiry>, 10 unreserved Lambda slots and Aurora default 17.9 with zero-ACU support.
+  A real bootstrap plan using the new default proposes six additions in Stockholm only.
+- No AWS resources/secrets were created, no real Express/Data API deployment was claimed,
+  no Paid/Advanced upgrade occurred, and nothing was pushed or published. Actual deployment
+  and real AWS acceptance checks remain subject to the separately agreed deployment step.

@@ -14,7 +14,9 @@ React/TypeScript is a static frontend. All API credentials stay on the server.
 Local Compose starts PostgreSQL 17, Moto for S3/SQS, a one-shot setup container, API,
 worker and the built frontend behind nginx. Ports bind to loopback only.
 AWS uses S3/CloudFront, API Gateway, container-based Lambda functions, SQS and Aurora
-PostgreSQL Serverless v2 via Data API. AWS networking does not require a NAT gateway.
+PostgreSQL Serverless v2 Express via Data API. AWS networking does not require a customer
+VPC or NAT gateway. The Express internet gateway authenticates administration with IAM;
+the application uses a separate SQL login through Data API.
 OpenAI is a separate external processor. No Bedrock integration is implemented.
 
 ## Database
@@ -79,9 +81,32 @@ The static first screen does not query the database. No keep-alive pinger is use
 The user selected the new AWS experience in Stockholm (`eu-north-1`) on 2026-11-14.
 Local access uses the named CLI profile `portfolio` and browser-based `aws login`.
 The Agent Toolkit service uses `us-east-1`; application resources belong in Stockholm.
-The initial Frankfurt Terraform/workflow templates require a separate compatibility
-and region update before deployment. See `AWS_RUNBOOK.md` for the selected project
-and setup status. Toolkit setup does not authorize provisioning or an AWS plan upgrade.
+Terraform, workflows, examples and runtime defaults now use Stockholm, with deployment
+region validation. The owner chose to remain on the AWS Free Plan while retaining paid
+OpenAI use under the existing EUR 10 application budget. AWS credits never pay OpenAI.
+
+The Free Plan requires Aurora Express. Because the locked Terraform provider 6.73.0
+cannot create Express clusters, `scripts/prepare_aws_demo.py` checks prerequisites
+read-only by default. Its explicit `--apply` path prepares one tagged Express cluster
+(0–1 ACU, 300-second pause, deletion protection) and three Secrets Manager secrets.
+It checks the active Free Plan, credits, expiry and expected project before mutation.
+Express chooses the current default engine version (17.9 on 2026-11-15); preparation
+verifies zero-ACU support rather than passing the former 17.7 engine pin.
+
+Preparation creates an application SQL login over verified TLS with a short-lived IAM
+administrator token, then verifies its separately stored credentials through Data API.
+The SQL user owns the application's tables/migrations and has schema CREATE privileges,
+not administrator rights. Application SQL, Decimal handling and API contracts are unchanged.
+Secret values remain in SDK process memory and never enter Terraform or Git. Preparation
+reuses tagged resources and secrets, rejects foreign resources, and does not automatically
+repeat an ambiguous mutation or rotate an existing credential.
+
+Terraform reads the external database and creates the application stack. The Express
+cluster and three secrets therefore require separate reviewed cleanup. Lambda uses the
+shared concurrency pool because the project currently has only 10 slots; SQS processing
+is capped at 2. GitHub OIDC is optional and off by default due to the managed-policy denial.
+First deployment is from the local `portfolio` login. See `AWS_RUNBOOK.md` for verification,
+release and cleanup procedures. No Paid/Advanced upgrade is automated.
 
 The implementation request authorizes local development and bounded OpenAI evaluation.
 It does not yet authorize paid AWS provisioning, DNS changes, GitHub publication or Marketplace

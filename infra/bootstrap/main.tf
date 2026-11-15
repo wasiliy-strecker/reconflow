@@ -4,7 +4,14 @@ terraform {
     aws = { source = "hashicorp/aws", version = "~> 6.0" }
   }
 }
-variable "region" { default = "eu-central-1" }
+variable "region" {
+  type    = string
+  default = "eu-north-1"
+  validation {
+    condition     = var.region == "eu-north-1"
+    error_message = "ReconFlow resources must use the project's selected Region eu-north-1."
+  }
+}
 provider "aws" { region = var.region }
 data "aws_caller_identity" "current" {}
 resource "aws_ecr_repository" "app" {

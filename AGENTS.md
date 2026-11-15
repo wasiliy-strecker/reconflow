@@ -17,8 +17,9 @@ docs/CHANGELOG.md with Europe/Berlin timestamps. Keep durable decisions in docs/
 - User guidance level: `MEDIUM`, short progress updates and questions only for material ambiguity.
 - Toolkit catalog/setup uses `us-east-1`; this does not authorize regional application resources there.
 - Work on ReconFlow from `<project-root>`. Do not append AWS rules to Contest Gallery repositories.
-- Existing Terraform/workflow examples target Frankfurt and are not ready for this Stockholm project.
-  Review service availability, prices, IAM restrictions and region settings before a separately requested deployment.
+- Terraform/workflow defaults target Stockholm. The Free Plan uses a separately prepared Aurora
+  Express cluster; GitHub OIDC is disabled by default. Recheck plan/credits and IAM restrictions
+  before a separately authorized deployment. Do not upgrade to Paid or Advanced automatically.
 - Until AWS MCP tools are loaded in the active session, use the authenticated AWS CLI and official
   AWS documentation for setup verification. Do not claim unavailable MCP tools were called.
 

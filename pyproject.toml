@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.11,<1", "moto[server]>=5,<6"]
+dev = ["boto3[crt]>=1.37,<2", "pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.11,<1", "moto[server]>=5,<6"]
 
 [build-system]
 requires = ["hatchling"]

@@ -1,52 +1,13 @@
-resource "aws_vpc" "db" {
-  cidr_block           = "10.72.0.0/16"
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-}
-resource "aws_subnet" "db" {
-  count             = 2
-  vpc_id            = aws_vpc.db.id
-  cidr_block        = cidrsubnet(aws_vpc.db.cidr_block, 8, count.index)
-  availability_zone = data.aws_availability_zones.available.names[count.index]
-}
-resource "aws_security_group" "db" {
-  name   = "${var.name}-database"
-  vpc_id = aws_vpc.db.id
-  # Data API does not need inbound database ports or a NAT gateway.
-}
-resource "aws_db_subnet_group" "db" {
-  name       = var.name
-  subnet_ids = aws_subnet.db[*].id
-}
-resource "aws_rds_cluster" "db" {
-  cluster_identifier          = var.name
-  engine                      = "aurora-postgresql"
-  engine_version              = var.engine_version
-  database_name               = "reconflow"
-  master_username             = "reconflow_admin"
-  manage_master_user_password = true
-  enable_http_endpoint        = true
-  storage_encrypted           = true
-  db_subnet_group_name        = aws_db_subnet_group.db.name
-  vpc_security_group_ids      = [aws_security_group.db.id]
-  backup_retention_period     = 1
-  deletion_protection         = true
-  skip_final_snapshot         = false
-  final_snapshot_identifier   = "${var.name}-final"
-  serverlessv2_scaling_configuration {
-    min_capacity             = 0
-    max_capacity             = 1
-    seconds_until_auto_pause = 300
+# Express creation is owned by the explicit operator preparation script.
+# Terraform must never replace it with a full-configuration (Paid Plan) cluster.
+data "aws_rds_cluster" "db" {
+  cluster_identifier = var.name
+  lifecycle {
+    postcondition {
+      condition     = self.engine == "aurora-postgresql" && self.database_name == "reconflow" && self.iam_database_authentication_enabled && self.deletion_protection && lookup(self.tags, "ManagedBy", "") == "reconflow-free-demo"
+      error_message = "Use the protected Aurora PostgreSQL Express cluster created by prepare_aws_demo.py."
+    }
   }
-}
-resource "aws_rds_cluster_instance" "writer" {
-  identifier                   = "${var.name}-writer"
-  cluster_identifier           = aws_rds_cluster.db.id
-  instance_class               = "db.serverless"
-  engine                       = aws_rds_cluster.db.engine
-  engine_version               = aws_rds_cluster.db.engine_version
-  publicly_accessible          = false
-  performance_insights_enabled = false
 }
 resource "aws_s3_bucket" "buckets" {
   for_each = toset(["web", "documents"])
@@ -105,8 +66,8 @@ resource "aws_iam_role_policy" "runtime" {
   role     = aws_iam_role.runtime[each.key].id
   policy = jsonencode({ Version = "2012-10-17", Statement = concat([
     { Effect = "Allow", Action = ["logs:CreateLogStream", "logs:PutLogEvents"], Resource = "${aws_cloudwatch_log_group.functions[each.key].arn}:*" },
-    { Effect = "Allow", Action = ["rds-data:ExecuteStatement", "rds-data:BeginTransaction", "rds-data:CommitTransaction", "rds-data:RollbackTransaction"], Resource = aws_rds_cluster.db.arn },
-    { Effect = "Allow", Action = ["secretsmanager:GetSecretValue"], Resource = [aws_rds_cluster.db.master_user_secret[0].secret_arn, var.openai_secret_arn, var.session_secret_arn] }
+    { Effect = "Allow", Action = ["rds-data:ExecuteStatement", "rds-data:BeginTransaction", "rds-data:CommitTransaction", "rds-data:RollbackTransaction"], Resource = data.aws_rds_cluster.db.arn },
+    { Effect = "Allow", Action = ["secretsmanager:GetSecretValue"], Resource = [var.database_secret_arn, var.openai_secret_arn, var.session_secret_arn] }
     ], each.key == "migrate" ? [] : [
     { Effect = "Allow", Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"], Resource = "${aws_s3_bucket.buckets["documents"].arn}/sessions/*" },
     { Effect = "Allow", Action = each.key == "api" ? ["sqs:SendMessage"] : ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"], Resource = aws_sqs_queue.jobs.arn }
@@ -118,22 +79,24 @@ resource "aws_cloudwatch_log_group" "functions" {
   retention_in_days = 7
 }
 resource "aws_lambda_function" "functions" {
-  for_each                       = local.functions
-  function_name                  = "${var.name}-${each.key}"
-  role                           = aws_iam_role.runtime[each.key].arn
-  package_type                   = "Image"
-  image_uri                      = var.image_uri
-  architectures                  = ["x86_64"]
-  timeout                        = each.value.timeout
-  memory_size                    = each.value.memory
-  reserved_concurrent_executions = each.value.concurrency
+  for_each      = local.functions
+  function_name = "${var.name}-${each.key}"
+  role          = aws_iam_role.runtime[each.key].arn
+  package_type  = "Image"
+  image_uri     = var.image_uri
+  architectures = ["x86_64"]
+  timeout       = each.value.timeout
+  memory_size   = each.value.memory
+  # The Free Plan currently has a total concurrency quota of 10.
+  # Reserving capacity requires leaving 100 unreserved; use the shared pool.
+  reserved_concurrent_executions = -1
   image_config { command = [each.value.handler] }
   environment {
     variables = {
       APP_MODE                  = "demo"
       DB_DRIVER                 = "data-api"
-      DB_CLUSTER_ARN            = aws_rds_cluster.db.arn
-      DB_SECRET_ARN             = aws_rds_cluster.db.master_user_secret[0].secret_arn
+      DB_CLUSTER_ARN            = data.aws_rds_cluster.db.arn
+      DB_SECRET_ARN             = var.database_secret_arn
       SESSION_SECRET_ARN        = var.session_secret_arn
       OPENAI_SECRET_ARN         = var.openai_secret_arn
       OPENAI_MODEL              = "gpt-6-luna"
@@ -151,8 +114,17 @@ resource "aws_lambda_function" "functions" {
       MAX_SESSIONS_PER_HOUR     = "30"
     }
   }
-  depends_on = [aws_iam_role_policy.runtime, aws_rds_cluster_instance.writer]
-  lifecycle { ignore_changes = [image_uri] }
+  depends_on = [aws_iam_role_policy.runtime]
+  lifecycle {
+    ignore_changes = [image_uri]
+    precondition {
+      condition = startswith(var.image_uri, "${local.account}.dkr.ecr.${var.region}.amazonaws.com/") && alltrue([
+        for arn in [var.database_secret_arn, var.openai_secret_arn, var.session_secret_arn] :
+        startswith(arn, "arn:aws:secretsmanager:${var.region}:${local.account}:secret:")
+      ])
+      error_message = "The image and all secrets must belong to the authenticated project in Stockholm."
+    }
+  }
 }
 resource "aws_lambda_event_source_mapping" "jobs" {
   event_source_arn        = aws_sqs_queue.jobs.arn

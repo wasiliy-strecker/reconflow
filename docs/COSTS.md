@@ -1,19 +1,30 @@
-# Cost assumptions — reviewed 2026-11-13
+# Cost assumptions — reviewed 2026-11-15
 
-No AWS account has been provisioned for ReconFlow. The following is a planning estimate,
+No ReconFlow application resources have been provisioned in the selected AWS project. The following is a planning estimate,
 not an AWS quote or a guaranteed monthly cap. USD amounts exclude tax, currency changes,
 free-tier allowances and account credits. OpenAI billing is separate.
 
+## Free Plan and payment boundary
+
+The owner wants AWS testing without an AWS payment while continuing to use paid OpenAI.
+The authenticated 2026-11-15 query confirmed ACTIVE FREE, positive credits remaining,
+expiry <private-plan-expiry>. This is a snapshot, not an ongoing balance guarantee.
+While the Free Plan is active, eligible usage consumes credits/free allowances rather
+than producing a payable AWS bill. It ends at expiry or credit exhaustion. No upgrade
+to Paid or Advanced is performed by the scripts. Check AWS Settings > Billing and
+`aws freetier get-account-plan-state --profile portfolio --region eu-north-1` before deployment.
+See the [AWS Free Tier FAQ](https://aws.amazon.com/free/free-tier-faqs/).
+
 ## AWS demo
 
-Architecture: one Aurora PostgreSQL Serverless v2 writer, minimum 0 / maximum 1 ACU,
-auto-pause after 300 seconds; Lambda outside the database VPC; no NAT gateway, load
+Architecture: one Aurora PostgreSQL Serverless v2 Express writer, minimum 0 / maximum 1 ACU,
+auto-pause after 300 seconds; Lambda with public service endpoints; no NAT gateway, load
 balancer, always-on ECS service or provisioned concurrency. CloudFront serves static
 assets; the first screen does not query the database.
 
-Frankfurt planning inputs taken from the [AWS RDS regional price catalog](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRDS/current/eu-central-1/index.json):
-Aurora Standard serverless capacity USD 0.14/ACU-hour, storage USD 0.119/GB-month,
-I/O USD 0.22/million requests. Re-fetch the current catalog before applying.
+Stockholm planning inputs (catalog publication 2026-11-13T21:52:33Z) taken from the [AWS RDS regional price catalog](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRDS/current/eu-north-1/index.json):
+Aurora Standard serverless capacity USD 0.14/ACU-hour, storage USD 0.11/GB-month,
+I/O USD 0.21/million requests. Re-fetch the current catalog before applying.
 
 Assume each isolated visitor keeps the database active for five minutes, followed by
 five idle minutes before pause. Use the full 1 ACU ceiling for these ten minutes:
@@ -25,11 +36,14 @@ five idle minutes before pause. Use the full 1 ACU ceiling for these ten minutes
 | 100 | 16.67 | USD 2.33 |
 | Never pauses, 730 hours | 730 | USD 102.20 |
 
-Storage remains billable while paused. A 10 GB storage assumption adds USD 1.19/month.
-Three Secrets Manager secrets at USD 0.40 each add approximately USD 1.20/month,
+Storage remains metered while paused. Express on the Free Plan permits up to 1 GB of
+data; at the catalog storage rate that is USD 0.11/month. Until actual Express metering
+is checked, the estimate conservatively reserves USD 1.10 for storage (10 GB equivalent).
+This allowance does not increase the Free Plan's 1 GB storage limit.
+Three Secrets Manager secrets (SQL login, session and OpenAI) at USD 0.40 each add approximately USD 1.20/month,
 plus API calls. Two standard alarms add approximately USD 0.20/month. Budget further
 usage for S3, state versions, ECR, CloudFront transfer, Lambda, HTTP API, SQS, logs and I/O.
-For a very quiet demo a provisional **USD 3–6/month AWS allowance** is plausible under
+For a very quiet demo a provisional **USD 3–7/month AWS credit-consumption allowance** is plausible under
 these assumptions; it is not a promise. More traffic, abusive callers or activity that
 prevents pause can cost substantially more. Account costs unrelated to ReconFlow are excluded.
 
@@ -44,6 +58,12 @@ This sends notifications only; it does not stop charges. API throttles and maxim
 limit load but do not impose a fixed invoice maximum.
 
 ## OpenAI
+
+OpenAI stays enabled locally and in the prepared AWS configuration. The existing local
+key is reused only through the private preparation command, stored in Secrets Manager
+for AWS, and never returned to the browser. OpenAI invoices are separate from AWS's
+Free Plan. Local and AWS databases maintain independent application ledgers, so their
+EUR 10 budgets do not constitute one shared provider-wide cap.
 
 Default: `gpt-6-luna`, configured standard input USD 0.10/million tokens and output
 USD 0.50/million tokens. Above 272,000 input tokens, reservation pricing doubles input

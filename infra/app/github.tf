@@ -1,10 +1,11 @@
 resource "aws_iam_openid_connect_provider" "github" {
-  count          = var.existing_github_oidc_arn == "" ? 1 : 0
+  count          = var.enable_github_deploy && var.existing_github_oidc_arn == "" ? 1 : 0
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
 }
 resource "aws_iam_role" "deploy" {
-  name = "${var.name}-github-deploy"
+  count = var.enable_github_deploy ? 1 : 0
+  name  = "${var.name}-github-deploy"
   assume_role_policy = jsonencode({ Version = "2012-10-17", Statement = [{
     Effect    = "Allow", Action = "sts:AssumeRoleWithWebIdentity",
     Principal = { Federated = var.existing_github_oidc_arn != "" ? var.existing_github_oidc_arn : aws_iam_openid_connect_provider.github[0].arn },
@@ -15,7 +16,8 @@ resource "aws_iam_role" "deploy" {
   }] })
 }
 resource "aws_iam_role_policy" "deploy" {
-  role = aws_iam_role.deploy.id
+  count = var.enable_github_deploy ? 1 : 0
+  role  = aws_iam_role.deploy[0].id
   policy = jsonencode({ Version = "2012-10-17", Statement = [
     { Effect = "Allow", Action = ["ecr:GetAuthorizationToken"], Resource = "*" },
     { Effect = "Allow", Action = ["ecr:BatchCheckLayerAvailability", "ecr:InitiateLayerUpload", "ecr:UploadLayerPart", "ecr:CompleteLayerUpload", "ecr:PutImage", "ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"], Resource = "arn:aws:ecr:${var.region}:${local.account}:repository/${var.name}" },

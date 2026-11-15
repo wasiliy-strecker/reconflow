@@ -35,6 +35,15 @@ KI-Ergebnisse werden niemals automatisch bestätigt oder als Buchung ausgeführt
 Eigene PDF/JPG/PNG und CSV sind nur im lokalen Modus erlaubt. Das vorbereitete
 öffentliche AWS-Demo akzeptiert ausschließlich die enthaltenen synthetischen Dateien.
 
+Für den ersten AWS-Test bleibt der bestehende **Free Plan** erhalten. Die vorbereitete
+Stockholm-Konfiguration verwendet Aurora Express; GitHub-OIDC ist zunächst deaktiviert.
+OpenAI bleibt separat kostenpflichtig und mit dem bestehenden Budget nutzbar.
+Den AWS-Zugang prüfst du ohne Ressourcenerstellung mit:
+
+```bash
+uv run --frozen python scripts/prepare_aws_demo.py
+```
+
 ## Technischer Aufbau
 
 ```mermaid
@@ -68,7 +77,8 @@ Details: [Architektur](docs/ARCHITECTURE.md), [Dateiformate](docs/DATA_FORMATS.m
 
 ## Nachgewiesener Stand
 
-- 44 Python-Tests mit echten lokalen PostgreSQL-/S3-Adaptern und simulierten KI-Antworten.
+- 55 Python-Tests mit lokalen PostgreSQL-/S3-Adaptern, simulierten KI-Antworten und AWS-Vorbereitung.
+- Sechs Terraform-Tests mit simuliertem AWS-Provider prüfen Stockholm, Free-Plan-Vorgaben und optionales OIDC.
 - Ein Browser-Test deckt Import, Prüfung, Abgleich, manuelle Zuordnung und XLSX-Download ab.
   Lokal zusätzlich mit echten OpenAI-Aufrufen für Extraktion und Zuordnung ausgeführt.
 - Echte KI-Smoke-Evaluation: **27/27 Kopffelder** bei drei synthetischen PDF-/PNG-/JPEG-Rechnungen.
@@ -78,7 +88,8 @@ Details: [Architektur](docs/ARCHITECTURE.md), [Dateiformate](docs/DATA_FORMATS.m
 - Produktions-Frontend und Docker-Images gebaut. Beide Terraform-Module lokal validiert.
 
 Messprotokolle: [KI-Evaluation](docs/evaluation/latest.json), [Benchmark](docs/evaluation/benchmark.json).
-AWS wurde **noch nicht provisioniert oder im AWS-Konto getestet**. Die Workflows sind vorbereitet,
+AWS-Zugang, Free Plan und Stockholm-Verfügbarkeit wurden lesend geprüft.
+Die Anwendung wurde **noch nicht auf AWS provisioniert oder dort getestet**. Die Workflows sind vorbereitet,
 aber noch nicht auf GitHub ausgeführt. Eine öffentliche Demo-URL folgt erst mit einem AWS-Deployment.
 
 ## Entwickeln und testen
