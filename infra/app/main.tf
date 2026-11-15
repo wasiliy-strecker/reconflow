@@ -4,7 +4,7 @@ data "aws_rds_cluster" "db" {
   cluster_identifier = var.name
   lifecycle {
     postcondition {
-      condition     = self.engine == "aurora-postgresql" && self.database_name == "reconflow" && self.iam_database_authentication_enabled && self.deletion_protection && lookup(self.tags, "ManagedBy", "") == "reconflow-free-demo"
+      condition     = self.engine == "aurora-postgresql" && self.iam_database_authentication_enabled && self.deletion_protection && lookup(self.tags, "ManagedBy", "") == "reconflow-free-demo"
       error_message = "Use the protected Aurora PostgreSQL Express cluster created by prepare_aws_demo.py."
     }
   }

@@ -93,8 +93,11 @@ It checks the active Free Plan, credits, expiry and expected project before muta
 Express chooses the current default engine version (17.9 on 2026-11-15); preparation
 verifies zero-ACU support rather than passing the former 17.7 engine pin.
 
-Preparation creates an application SQL login over verified TLS with a short-lived IAM
-administrator token, then verifies its separately stored credentials through Data API.
+Express rejects `DatabaseName` during cluster creation. Preparation first connects to
+`postgres` over verified TLS with a short-lived IAM administrator token and creates the
+`reconflow` database outside a transaction, guarded by a session advisory lock. It then
+creates an application SQL login and verifies its stored credentials through Data API.
+SQL database creation is not reflected in the RDS cluster's `DatabaseName` metadata.
 The SQL user owns the application's tables/migrations and has schema CREATE privileges,
 not administrator rights. Application SQL, Decimal handling and API contracts are unchanged.
 Secret values remain in SDK process memory and never enter Terraform or Git. Preparation

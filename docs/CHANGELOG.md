@@ -100,3 +100,15 @@
 - No AWS resources/secrets were created, no real Express/Data API deployment was claimed,
   no Paid/Advanced upgrade occurred, and nothing was pushed or published. Actual deployment
   and real AWS acceptance checks remain subject to the separately agreed deployment step.
+
+## 2026-11-15 11:11 CET — Express initial database compatibility
+
+- The user approved AWS deployment on the existing Free Plan. The first create request
+  definitively failed with `InvalidParameterCombination`; CloudTrail identified the
+  unsupported initial `DatabaseName` argument. Stockholm cluster inventory remained empty.
+- Preparation now creates the SQL database through the IAM-authenticated `postgres`
+  connection, outside a transaction and under an advisory lock. Terraform no longer
+  checks the initial-database metadata, which does not reflect later SQL creation.
+- Verification: all eleven preparation tests passed, including real local database
+  creation, repeated setup, password preservation and restricted role privileges.
+  Ruff and all four application Terraform tests passed. Frontend was unaffected.

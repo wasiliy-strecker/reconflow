@@ -57,6 +57,7 @@ class FakeAws:
             assert self.cluster is None
             assert parameters["WithExpressConfiguration"] is True
             assert "EngineVersion" not in parameters
+            assert "DatabaseName" not in parameters
             self.cluster = {
                 **parameters,
                 "EngineVersion": "17.9",
@@ -231,8 +232,10 @@ def test_ambiguous_cluster_create_is_not_repeated(tmp_path):
 @pytest.mark.integration
 def test_sql_login_creation_reuses_password_and_grants_no_admin(monkeypatch):
     username = "rf_setup_" + uuid.uuid4().hex[:16]
+    database = "rf_setup_" + uuid.uuid4().hex[:16]
     password = "synthetic-test-password-with-quote-'" + uuid.uuid4().hex
     monkeypatch.setattr(prepare, "DB_USER", username)
+    monkeypatch.setattr(prepare, "NAME", database)
     connect = prepare.psycopg.connect
     url = settings().database_url.get_secret_value()
 
@@ -240,22 +243,22 @@ def test_sql_login_creation_reuses_password_and_grants_no_admin(monkeypatch):
         assert kwargs["sslmode"] == "verify-full"
         assert kwargs["sslrootcert"] == "system"
         assert kwargs["password"] == "synthetic-iam-token"
-        return connect(url)
+        return connect(url, dbname=kwargs["dbname"], autocommit=kwargs.get("autocommit", False))
 
     monkeypatch.setattr(prepare.psycopg, "connect", local_connection)
     aws = SimpleNamespace(run=lambda *args, **kwargs: "synthetic-iam-token")
     cluster = {"Endpoint": "synthetic", "Port": 5432, "MasterUsername": "admin"}
     try:
         prepare.configure_sql_user(aws, cluster, {"username": username, "password": password})
-        with connect(url) as db:
+        with connect(url, dbname=database) as db:
             first = db.execute(
                 "SELECT rolpassword, rolsuper, rolcreaterole, rolcreatedb FROM pg_authid WHERE rolname=%s",
                 (username,),
             ).fetchone()
             assert first[1:] == (False, False, False)
             assert db.execute(
-                "SELECT has_database_privilege(%s, 'reconflow', 'CONNECT'), has_schema_privilege(%s, 'public', 'CREATE')",
-                (username, username),
+                "SELECT has_database_privilege(%s, %s, 'CONNECT'), has_schema_privilege(%s, 'public', 'CREATE')",
+                (username, database, username),
             ).fetchone() == (True, True)
         prepare.configure_sql_user(
             aws,
@@ -270,7 +273,12 @@ def test_sql_login_creation_reuses_password_and_grants_no_admin(monkeypatch):
                 == first[0]
             )
     finally:
-        with connect(url) as db:
+        with connect(url, autocommit=True) as db:
+            db.execute(
+                prepare.sql.SQL("DROP DATABASE IF EXISTS {}").format(
+                    prepare.sql.Identifier(database)
+                )
+            )
             if db.execute("SELECT 1 FROM pg_roles WHERE rolname=%s", (username,)).fetchone():
                 db.execute(
                     prepare.sql.SQL("DROP OWNED BY {}").format(prepare.sql.Identifier(username))

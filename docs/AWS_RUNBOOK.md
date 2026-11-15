@@ -87,8 +87,10 @@ uv run --frozen python scripts/prepare_aws_demo.py --apply \
   --expected-account-id "$RF_ACCOUNT_ID"
 ```
 
-The preparation creates `reconflow` Express, enables Data API, verifies `SELECT 1`
-with the application SQL user, and creates these secrets:
+The preparation creates `reconflow` Express, then creates the SQL database through
+the IAM-authenticated `postgres` connection (Express rejects `DatabaseName` at cluster
+creation). It enables Data API, verifies `SELECT 1` with the application SQL user, and
+creates these secrets:
 
 | Secret | Stored format |
 | --- | --- |

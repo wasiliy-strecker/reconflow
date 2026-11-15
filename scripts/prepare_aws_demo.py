@@ -99,7 +99,6 @@ def check_cluster(cluster, account):
         or cluster.get("VPCNetworkingEnabled") is not False
         or cluster.get("InternetAccessGatewayEnabled") is not True
         or cluster.get("IAMDatabaseAuthenticationEnabled") is not True
-        or cluster.get("DatabaseName") != NAME
         or len(cluster.get("DBClusterMembers", [])) > 1
     ):
         raise ValueError(
@@ -220,17 +219,23 @@ def configure_sql_user(aws, cluster, credentials):
             "Region": REGION,
         },
     )
+    # Express cannot create an initial database through CreateDBCluster. CREATE
+    # DATABASE must run outside a transaction; the session lock serializes setup.
     # Express uses public AWS trust roots. Verify both certificate and hostname.
-    with psycopg.connect(
-        host=cluster["Endpoint"],
-        port=cluster["Port"],
-        dbname=NAME,
-        user=cluster["MasterUsername"],
-        password=token,
-        sslmode="verify-full",
-        sslrootcert="system",
-        connect_timeout=30,
-    ) as connection:
+    connection_options = {
+        "host": cluster["Endpoint"],
+        "port": cluster["Port"],
+        "user": cluster["MasterUsername"],
+        "password": token,
+        "sslmode": "verify-full",
+        "sslrootcert": "system",
+        "connect_timeout": 30,
+    }
+    with psycopg.connect(**connection_options, dbname="postgres", autocommit=True) as admin:
+        admin.execute("SELECT pg_advisory_lock(71823761)")
+        if not admin.execute("SELECT 1 FROM pg_database WHERE datname=%s", (NAME,)).fetchone():
+            admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(NAME)))
+    with psycopg.connect(**connection_options, dbname=NAME) as connection:
         connection.execute("SELECT pg_advisory_xact_lock(71823761)")
         exists = connection.execute(
             "SELECT 1 FROM pg_roles WHERE rolname=%s", (DB_USER,)
@@ -270,7 +275,6 @@ def apply(aws, report, env_file):
                 "DBClusterIdentifier": NAME,
                 "Engine": "aurora-postgresql",
                 "WithExpressConfiguration": True,
-                "DatabaseName": NAME,
                 "MasterUsername": "reconflow_admin",
                 "DeletionProtection": True,
                 "ServerlessV2ScalingConfiguration": SCALING,
