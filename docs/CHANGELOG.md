@@ -273,3 +273,13 @@
 - Verification before the follow-up push: workflow parsing, certificate-path resolution,
   loading the system trust store, Ruff check/format and diff checks passed. The full
   hosted application and browser suite will run again with this environment correction.
+
+## 2026-11-16 21:36 CET — Public GitHub acceptance complete
+
+- GitHub CI run [43951172100](https://github.com/wasiliy-strecker/reconflow/actions/runs/43951172100)
+  passed for revision `d6990dd`: all 73 Python tests, four browser scenarios, eight mocked
+  Terraform tests, Ruff, TypeScript/production build and the full-history credential scan.
+- The repository is public, all sanitized milestones are pushed, and GitHub attribution
+  uses the public username and noreply email. Original private history backups and
+  runtime configuration remain ignored and local. No AWS resources, live deployment,
+  paid AI requests or GPU rentals were changed by publication or CI.
