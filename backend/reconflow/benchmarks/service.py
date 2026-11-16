@@ -120,7 +120,7 @@ def login(session, password, ip):
 
 
 def dispatch(lease_id):
-    objects.put("control/" + lease_id + ".json", {"id": lease_id})
+    objects.put("control/" + lease_id + ".json", {"id": lease_id, "created_at": now().isoformat()})
     storage.client("sqs").send_message(
         QueueUrl=settings().sqs_queue_url, MessageBody=dumps({"benchmark_lease_id": lease_id})
     )
@@ -225,6 +225,13 @@ def create_lease(session, ip, key, offer_id, model, mode, expected_hourly):
                 },
             )
             event(db, identifier, "reserved")
+            # Persist recovery intent before SQL commits. A failed write rolls back
+            # the reservation; the reaper gives uncommitted/orphan controls a grace
+            # period. Thus a crash before SQS dispatch cannot strand the global slot.
+            objects.put(
+                "control/" + identifier + ".json",
+                {"id": identifier, "created_at": current.isoformat()},
+            )
     dispatch(identifier)
     return get_lease(session, identifier)
 

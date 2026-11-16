@@ -117,6 +117,21 @@ def test_idle_watchdog_does_not_wake_database(objects, provider, monkeypatch):
 
 
 @pytest.mark.integration
+def test_reaper_preserves_uncommitted_control_until_grace_expires(
+    gpu, objects, provider, monkeypatch
+):
+    identifier = "f" * 32
+    current = service.now()
+    key = "control/" + identifier + ".json"
+    objects[key] = {"id": identifier, "created_at": current.isoformat()}
+    lifecycle.sweep(provider)
+    assert key in objects
+    monkeypatch.setattr(service, "now", lambda: current + timedelta(seconds=121))
+    lifecycle.sweep(provider)
+    assert key not in objects
+
+
+@pytest.mark.integration
 def test_ready_claim_progress_and_completion_are_scoped_and_idempotent(
     gpu, objects, provider, monkeypatch
 ):

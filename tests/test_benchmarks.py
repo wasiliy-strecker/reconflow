@@ -84,6 +84,7 @@ def gpu(monkeypatch):
         original = {r["id"] for r in db.execute("SELECT id FROM gpu_leases")}
     monkeypatch.setattr(service, "VastProvider", lambda: Mock(offers=lambda *_: [dict(OFFER)]))
     monkeypatch.setattr(service, "dispatch", Mock())
+    monkeypatch.setattr(service.objects, "put", Mock())
     monkeypatch.setattr(
         service.objects, "get", lambda _: {"healthy": True, "at": service.now().isoformat()}
     )
@@ -126,6 +127,16 @@ def test_provider_inventory_paginates_without_float_conversion():
 
 def rent(session, key="test-key", mode="live"):
     return service.create_lease(session, "synthetic-ip", key, 42, MODEL, mode, Decimal("0.20"))
+
+
+@pytest.mark.integration
+def test_control_write_failure_rolls_back_budget_and_global_slot(gpu, monkeypatch):
+    monkeypatch.setattr(service.objects, "put", Mock(side_effect=RuntimeError("S3 unavailable")))
+    with pytest.raises(RuntimeError, match="S3 unavailable"):
+        rent(gpu)
+    with transaction() as db:
+        assert not db.one("SELECT id FROM gpu_leases WHERE session_id=:id", {"id": gpu})
+    service.dispatch.assert_not_called()
 
 
 @pytest.mark.integration

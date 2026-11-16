@@ -190,3 +190,10 @@ Vast inventory uses the SDK's paginated v1 method with a minimal field selection
 convenience inventory method performs float arithmetic on timestamps and is incompatible
 with Decimal-preserving JSON decoding. Provider inventory never fetches runner environment
 values. The dashboard renders model output as plain text.
+
+The S3 recovery intent is written inside the admission transaction, before SQL commits.
+Failure rolls back both the lease and its reservation. The reaper retains a control whose
+SQL row is not yet visible for a two-minute grace period, preventing a concurrent inventory
+scan from deleting the recovery intent before commit. This closes the otherwise stranded
+single-GPU slot after a crash between SQL commit and S3/SQS dispatch. Provider mutations
+still occur only after the durable SQL claim, outside database transactions.

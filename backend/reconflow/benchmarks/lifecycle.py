@@ -187,7 +187,10 @@ def sweep(provider=None):
             for instance, _ in matches:
                 destroy(instance["id"])
             if not matches:
-                objects.remove("control/" + identifier + ".json")
+                control = objects.get("control/" + identifier + ".json") or {}
+                created = service.timestamp(control.get("created_at", "1970-01-01T00:00:00+00:00"))
+                if (current - created).total_seconds() > 120:
+                    objects.remove("control/" + identifier + ".json")
             continue
         if matches:
             objects.remove("absence/" + identifier + ".json")

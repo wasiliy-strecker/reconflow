@@ -225,3 +225,13 @@
   identical SHA-256 b09ac4a06a7884d6e6c790602a6e4aad64fc48c1e9e5a5137b9ab66a2efbfb22.
 - Hardware acceptance remains pending: no Vast credentials were present, no GPU was rented,
   and no real benchmark results were produced. No push, publication or AWS deployment.
+
+## 2026-11-16 20:36 CET — Close GPU admission recovery gap
+
+- Persisted the S3 recovery record before committing admission so a pre-dispatch crash
+  cannot strand the one-GPU slot. A failed control write rolls back the budget reservation.
+- Added a grace period before deleting controls with no visible SQL row, covering a
+  concurrent reaper observing an uncommitted admission.
+- Validation: all 18 focused GPU tests passed, including both new fault-injection cases;
+  Ruff check/format and git diff checks passed. Frontend and Terraform are unchanged.
+- Temporary isolated API/worker/browser preview services were stopped after verification.
