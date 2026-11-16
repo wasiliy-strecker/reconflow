@@ -26,6 +26,9 @@ jobs:
   application:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # uv-managed Python does not inherit Ubuntu's OpenSSL certificate path.
+      SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -47,6 +50,7 @@ jobs:
           uv run python -m reconflow.bootstrap
       - name: Python checks and integration tests without paid API calls
         run: |
+          test -r "$SSL_CERT_FILE"
           uv run ruff check backend tests scripts
           uv run ruff format --check backend tests scripts
           uv run pytest -m 'not live' --cov=reconflow --cov-report=term-missing

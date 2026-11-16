@@ -257,3 +257,19 @@
   Terraform formatting, CI YAML parsing and diff checks passed.
 - No AWS deployment, paid AI/GPU call or provider credential upload is part of this
   publication step. Final rewritten-history scan and GitHub CI follow before handoff.
+
+## 2026-11-16 21:34 CET — Public repository and CI trust store
+
+- Published the sanitized 15-commit history to the owner-approved public repository:
+  https://github.com/wasiliy-strecker/reconflow. All milestones remain present; historical
+  author metadata, documentation and screenshots use the same public-data rules.
+- A fresh remote clone matched the audited local history exactly. Gitleaks and literal
+  private-value checks found no leaks across all reachable commits and 204 file versions.
+  GitHub secret scanning and push protection are enabled; no deployment secrets were uploaded.
+- The first hosted CI run passed the secret scan and all eight infrastructure tests.
+  Python reported 72 passes and one failure because uv's managed Python did not discover
+  Ubuntu's CA bundle. Set SSL_CERT_FILE explicitly for the application job, retaining
+  certificate and hostname verification and the existing real-database integration test.
+- Verification before the follow-up push: workflow parsing, certificate-path resolution,
+  loading the system trust store, Ruff check/format and diff checks passed. The full
+  hosted application and browser suite will run again with this environment correction.
