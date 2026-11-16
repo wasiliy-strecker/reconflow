@@ -1,5 +1,9 @@
 # ReconFlow
 
+GPU benchmarking is available as a separate **GPU Benchmarks** area: Vast.ai rental
+integration, an Ollama runner, durable comparisons and bounded automatic cleanup.
+Paid execution is disabled by default. See [GPU setup, measurements and live acceptance](docs/GPU_BENCHMARKS.md).
+
 **Rechnungen mit KI auslesen. Angaben prüfen. Zahlungseingänge nachvollziehbar abgleichen.**
 
 Ein eigenständiges Portfolio-Projekt von wasiliy-strecker mit Python, FastAPI,

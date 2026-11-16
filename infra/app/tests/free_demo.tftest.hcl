@@ -64,3 +64,21 @@ run "explicit_github_opt_in" {
     error_message = "Future authorized GitHub delivery must remain available as an explicit opt-in."
   }
 }
+
+run "gpu_admission_off_cleanup_on" {
+  command = plan
+  assert {
+    condition     = aws_lambda_function.functions["api"].environment[0].variables["BENCHMARKS_ENABLED"] == "false" && aws_scheduler_schedule.gpu_watchdog.schedule_expression == "rate(1 minute)"
+    error_message = "Admission must default off while the independent cleanup schedule remains present."
+  }
+  assert {
+    condition     = aws_lambda_function.functions["gpu_watchdog"].environment[0].variables["OPENAI_SECRET_ARN"] == "" && aws_lambda_function.functions["migrate"].environment[0].variables["VAST_SECRET_ARN"] == ""
+    error_message = "Cleanup must not load OpenAI credentials, and migrations must not load Vast credentials."
+  }
+}
+
+run "reject_unprepared_gpu_enablement" {
+  command = plan
+  variables { enable_gpu_benchmarks = true }
+  expect_failures = [aws_lambda_function.functions]
+}

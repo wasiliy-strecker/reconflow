@@ -204,3 +204,24 @@
 - Validation: all 70 Python tests passed, including existing invoice integration tests;
   Ruff passed. Runner/bootstrap imports and Zstandard/TLS availability passed inside the
   pinned Python 3.14 container. No real GPU, Vast credential or AWS mutation was used.
+
+## 2026-11-16 20:33 CET — GPU dashboard and AWS delivery preparation
+
+- Added GPU selection, fixed/live prompt controls, operator login, lifecycle feedback,
+  budget visibility, filtered comparisons and detailed measurement reports to the existing
+  responsive React interface. Empty state explicitly contains no invented measurements.
+- Added the existing-stack watchdog Lambda/Scheduler, scoped S3/secret access, failure
+  alarm and deployment workflow updates. Paid admission stays off by default and cannot
+  be enabled with missing runner/secret configuration. No AWS changes were applied.
+- Bounded comparison queries for Data API and fixed the SDK inventory/Decimal compatibility
+  boundary. Added public-versus-private report tests and plain-text output browser coverage.
+- Added docs/GPU_BENCHMARKS.md covering setup, conservative budget debits, reproducibility,
+  live acceptance, monitoring and rollback; updated architecture and README.
+- Final validation: 71 Python tests passed; the strengthened runner/security subset passed
+  again after its additional assertions. Ruff check/format, TypeScript and frontend build
+  passed. Four browser tests passed on the isolated local stack, including the existing
+  invoice workflow and mobile layout, using installed Chromium 1248. Terraform validate
+  and all six mocked app-stack tests passed. Two independently packaged runner ZIPs had
+  identical SHA-256 b09ac4a06a7884d6e6c790602a6e4aad64fc48c1e9e5a5137b9ab66a2efbfb22.
+- Hardware acceptance remains pending: no Vast credentials were present, no GPU was rented,
+  and no real benchmark results were produced. No push, publication or AWS deployment.

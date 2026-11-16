@@ -67,11 +67,20 @@ resource "aws_iam_role_policy" "runtime" {
   policy = jsonencode({ Version = "2012-10-17", Statement = concat([
     { Effect = "Allow", Action = ["logs:CreateLogStream", "logs:PutLogEvents"], Resource = "${aws_cloudwatch_log_group.functions[each.key].arn}:*" },
     { Effect = "Allow", Action = ["rds-data:ExecuteStatement", "rds-data:BeginTransaction", "rds-data:CommitTransaction", "rds-data:RollbackTransaction"], Resource = data.aws_rds_cluster.db.arn },
-    { Effect = "Allow", Action = ["secretsmanager:GetSecretValue"], Resource = [var.database_secret_arn, var.openai_secret_arn, var.session_secret_arn] }
+    { Effect = "Allow", Action = ["secretsmanager:GetSecretValue"], Resource = compact(concat(
+      [var.database_secret_arn, var.session_secret_arn],
+      each.key == "gpu_watchdog" ? [] : [var.openai_secret_arn],
+      each.key == "migrate" ? [] : [var.vast_secret_arn],
+      each.key == "api" ? [var.gpu_operator_secret_arn] : []
+    )) }
     ], each.key == "migrate" ? [] : [
-    { Effect = "Allow", Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"], Resource = "${aws_s3_bucket.buckets["documents"].arn}/sessions/*" },
-    { Effect = "Allow", Action = each.key == "api" ? ["sqs:SendMessage"] : ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"], Resource = aws_sqs_queue.jobs.arn }
-  ]) })
+    { Effect = "Allow", Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"], Resource = "${aws_s3_bucket.buckets["documents"].arn}/benchmarks/*" },
+    { Effect = "Allow", Action = contains(["api", "gpu_watchdog"], each.key) ? ["sqs:SendMessage"] : ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"], Resource = aws_sqs_queue.jobs.arn }
+    ], contains(["api", "worker"], each.key) ? [
+    { Effect = "Allow", Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"], Resource = "${aws_s3_bucket.buckets["documents"].arn}/sessions/*" }
+    ] : [], each.key == "gpu_watchdog" ? [
+    { Effect = "Allow", Action = ["s3:ListBucket"], Resource = aws_s3_bucket.buckets["documents"].arn, Condition = { StringLike = { "s3:prefix" = ["benchmarks/control/*"] } } }
+  ] : []) })
 }
 resource "aws_cloudwatch_log_group" "functions" {
   for_each          = local.functions
@@ -93,25 +102,31 @@ resource "aws_lambda_function" "functions" {
   image_config { command = [each.value.handler] }
   environment {
     variables = {
-      APP_MODE                  = "demo"
-      DB_DRIVER                 = "data-api"
-      DB_CLUSTER_ARN            = data.aws_rds_cluster.db.arn
-      DB_SECRET_ARN             = var.database_secret_arn
-      SESSION_SECRET_ARN        = var.session_secret_arn
-      OPENAI_SECRET_ARN         = var.openai_secret_arn
-      OPENAI_MODEL              = "gpt-6-luna"
-      AI_MONTHLY_BUDGET_EUR     = "10"
-      AI_INPUT_USD_PER_MILLION  = "0.10"
-      AI_OUTPUT_USD_PER_MILLION = "0.50"
-      AI_USD_TO_EUR             = "1.10"
-      AI_CONTEXT_TOKEN_CEILING  = "1050000"
-      S3_BUCKET                 = aws_s3_bucket.buckets["documents"].id
-      SQS_QUEUE_URL             = aws_sqs_queue.jobs.url
-      PUBLIC_ORIGIN             = "https://${aws_cloudfront_distribution.app.domain_name}"
-      MAX_DOCUMENTS             = "6"
-      MAX_CSV_ROWS              = "100"
-      MAX_JOBS_PER_SESSION      = "20"
-      MAX_SESSIONS_PER_HOUR     = "30"
+      APP_MODE                      = "demo"
+      DB_DRIVER                     = "data-api"
+      DB_CLUSTER_ARN                = data.aws_rds_cluster.db.arn
+      DB_SECRET_ARN                 = var.database_secret_arn
+      SESSION_SECRET_ARN            = var.session_secret_arn
+      OPENAI_SECRET_ARN             = each.key == "gpu_watchdog" ? "" : var.openai_secret_arn
+      VAST_SECRET_ARN               = each.key == "migrate" ? "" : var.vast_secret_arn
+      BENCHMARK_OPERATOR_SECRET_ARN = each.key == "api" ? var.gpu_operator_secret_arn : ""
+      BENCHMARKS_ENABLED            = tostring(var.enable_gpu_benchmarks)
+      GPU_RUNNER_IMAGE              = var.gpu_runner_image
+      GPU_RUNNER_ARTIFACT_KEY       = var.gpu_runner_artifact_key
+      GPU_RUNNER_ARTIFACT_SHA256    = var.gpu_runner_artifact_sha256
+      OPENAI_MODEL                  = "gpt-6-luna"
+      AI_MONTHLY_BUDGET_EUR         = "10"
+      AI_INPUT_USD_PER_MILLION      = "0.10"
+      AI_OUTPUT_USD_PER_MILLION     = "0.50"
+      AI_USD_TO_EUR                 = "1.10"
+      AI_CONTEXT_TOKEN_CEILING      = "1050000"
+      S3_BUCKET                     = aws_s3_bucket.buckets["documents"].id
+      SQS_QUEUE_URL                 = aws_sqs_queue.jobs.url
+      PUBLIC_ORIGIN                 = "https://${aws_cloudfront_distribution.app.domain_name}"
+      MAX_DOCUMENTS                 = "6"
+      MAX_CSV_ROWS                  = "100"
+      MAX_JOBS_PER_SESSION          = "20"
+      MAX_SESSIONS_PER_HOUR         = "30"
     }
   }
   depends_on = [aws_iam_role_policy.runtime]
@@ -119,10 +134,19 @@ resource "aws_lambda_function" "functions" {
     ignore_changes = [image_uri]
     precondition {
       condition = startswith(var.image_uri, "${local.account}.dkr.ecr.${var.region}.amazonaws.com/") && alltrue([
-        for arn in [var.database_secret_arn, var.openai_secret_arn, var.session_secret_arn] :
+        for arn in compact([var.database_secret_arn, var.openai_secret_arn, var.session_secret_arn, var.vast_secret_arn, var.gpu_operator_secret_arn]) :
         startswith(arn, "arn:aws:secretsmanager:${var.region}:${local.account}:secret:")
       ])
       error_message = "The image and all secrets must belong to the authenticated project in Stockholm."
+    }
+    precondition {
+      condition = !var.enable_gpu_benchmarks || (
+        var.vast_secret_arn != "" &&
+        can(regex("@sha256:[a-f0-9]{64}$", var.gpu_runner_image)) &&
+        startswith(var.gpu_runner_artifact_key, "benchmarks/artifacts/") &&
+        can(regex("^[a-f0-9]{64}$", var.gpu_runner_artifact_sha256))
+      )
+      error_message = "GPU admission requires a Vast secret and immutable runner image/artifact pins."
     }
   }
 }

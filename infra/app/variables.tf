@@ -65,6 +65,29 @@ variable "budget_email" {
   description = "Recipient chosen by the operator when deployment is authorized."
 }
 variable "monthly_aws_alert_usd" { default = 15 }
+variable "enable_gpu_benchmarks" {
+  type    = bool
+  default = false
+}
+variable "vast_secret_arn" {
+  type    = string
+  default = ""
+  validation {
+    condition     = var.vast_secret_arn == "" || can(regex("^arn:aws:secretsmanager:eu-north-1:[0-9]{12}:secret:reconflow/vast-", var.vast_secret_arn))
+    error_message = "Use a server-side reconflow/vast secret in Stockholm."
+  }
+}
+variable "gpu_operator_secret_arn" {
+  type    = string
+  default = ""
+  validation {
+    condition     = var.gpu_operator_secret_arn == "" || can(regex("^arn:aws:secretsmanager:eu-north-1:[0-9]{12}:secret:reconflow/gpu-operator-", var.gpu_operator_secret_arn))
+    error_message = "Use a reconflow/gpu-operator secret in Stockholm."
+  }
+}
+variable "gpu_runner_image" { default = "python@sha256:1faf2343e747208b2a36e5f2b5ff908ec3b2d0078a6a7bfe73b535698fe83909" }
+variable "gpu_runner_artifact_key" { default = "" }
+variable "gpu_runner_artifact_sha256" { default = "" }
 provider "aws" {
   region = var.region
   default_tags { tags = { Project = var.name, Environment = "portfolio-demo" } }
@@ -73,8 +96,9 @@ data "aws_caller_identity" "current" {}
 locals {
   account = data.aws_caller_identity.current.account_id
   functions = {
-    api     = { handler = "reconflow.api.handler", timeout = 25, memory = 512 }
-    worker  = { handler = "reconflow.worker.handler", timeout = 180, memory = 1024 }
-    migrate = { handler = "reconflow.migrate.handler", timeout = 180, memory = 512 }
+    api          = { handler = "reconflow.api.handler", timeout = 25, memory = 512 }
+    worker       = { handler = "reconflow.worker.handler", timeout = 180, memory = 1024 }
+    migrate      = { handler = "reconflow.migrate.handler", timeout = 180, memory = 512 }
+    gpu_watchdog = { handler = "reconflow.benchmarks.lifecycle.handler", timeout = 120, memory = 512 }
   }
 }

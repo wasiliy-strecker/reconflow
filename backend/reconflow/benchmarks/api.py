@@ -198,6 +198,14 @@ def router(session_dependency):
     def results():
         return JSON({"results": service.results()})
 
+    @routes.get("/results/{identifier}")
+    def public_report(identifier: str):
+        return JSON(service.report(identifier))
+
+    @routes.get("/requests/{identifier}")
+    def private_report(identifier: str, s: Session):
+        return JSON(service.report(identifier, s))
+
     return routes
 
 

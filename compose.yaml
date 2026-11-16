@@ -59,6 +59,13 @@ services:
     depends_on:
       setup:
         condition: service_completed_successfully
+  gpu-watchdog:
+    <<: *backend
+    profiles: [gpu]
+    entrypoint: ['python', '-m', 'reconflow.benchmarks.lifecycle']
+    depends_on:
+      setup:
+        condition: service_completed_successfully
   web:
     build:
       context: frontend

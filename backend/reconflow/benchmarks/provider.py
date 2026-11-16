@@ -73,7 +73,22 @@ class VastProvider:
         )
 
     def instances(self):
-        return self.sdk.show_instances()
+        # The SDK convenience show_instances() subtracts a float from start_date;
+        # that conflicts with Decimal JSON decoding. Its v1 API preserves fields
+        # without conversion and also avoids fetching runner environment secrets.
+        rows = []
+        params = {"limit": 100, "select_cols": ["id", "label", "dph_total", "actual_status"]}
+        seen = set()
+        while True:
+            page = self.sdk.show_instances_v1(params)
+            rows.extend(page.get("instances", []))
+            token = page.get("next_token")
+            if not token:
+                return rows
+            if token in seen:
+                raise ValueError("Invalid provider inventory pagination")
+            seen.add(token)
+            params["after_token"] = token
 
     def destroy(self, instance_id):
         return self.sdk.destroy_instance(id=int(instance_id))

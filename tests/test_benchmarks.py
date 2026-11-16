@@ -113,6 +113,17 @@ def gpu(monkeypatch):
         )
 
 
+def test_provider_inventory_paginates_without_float_conversion():
+    provider = object.__new__(VastProvider)
+    provider.sdk = Mock()
+    provider.sdk.show_instances_v1.side_effect = [
+        {"instances": [{"id": 1, "dph_total": Decimal("0.21")}], "next_token": "next"},
+        {"instances": [{"id": 2, "dph_total": Decimal("0.22")}], "next_token": None},
+    ]
+    assert [i["id"] for i in provider.instances()] == [1, 2]
+    provider.sdk.show_instances.assert_not_called()
+
+
 def rent(session, key="test-key", mode="live"):
     return service.create_lease(session, "synthetic-ip", key, 42, MODEL, mode, Decimal("0.20"))
 

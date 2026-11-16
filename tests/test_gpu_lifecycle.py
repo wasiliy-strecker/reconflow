@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from reconflow.api import app
 from reconflow.benchmarks import lifecycle, protocol, runner, security, service
+from reconflow.config import settings
 from reconflow.db import transaction
 from test_benchmarks import MODEL, OFFER, rent
 from test_benchmarks import gpu as gpu_fixture
@@ -116,7 +117,10 @@ def test_idle_watchdog_does_not_wake_database(objects, provider, monkeypatch):
 
 
 @pytest.mark.integration
-def test_ready_claim_progress_and_completion_are_scoped_and_idempotent(gpu, objects, provider):
+def test_ready_claim_progress_and_completion_are_scoped_and_idempotent(
+    gpu, objects, provider, monkeypatch
+):
+    monkeypatch.setattr(settings(), "app_mode", "demo")
     lease = rent(gpu, mode="suite")
     lifecycle.process(lease["id"])
     url = "/api/benchmark-runner/" + lease["id"]
@@ -132,6 +136,7 @@ def test_ready_claim_progress_and_completion_are_scoped_and_idempotent(gpu, obje
         "load_ms": 10,
     }
     with TestClient(app) as client:
+        assert client.post("/api/benchmarks/leases", json={}).status_code == 403
         assert client.post(url + "/ready", json=metadata).status_code == 401
         assert (
             client.post(
@@ -180,8 +185,16 @@ def test_ready_claim_progress_and_completion_are_scoped_and_idempotent(gpu, obje
     result = next(r for r in service.results() if r["id"] == job["id"])["result"]
     assert result["summary"]["count"] == 15
     assert result["summary"]["median_tokens_per_second"] == 200
-    assert result["samples"][0]["vram_peak_mib"] is None
+    assert "samples" not in result
+    assert service.report(job["id"])["result"]["samples"][0]["vram_peak_mib"] is None
     assert "reports/" + job["id"] + ".json" in objects
+    with transaction() as db:
+        db.execute("UPDATE gpu_requests SET public=FALSE WHERE id=:id", {"id": job["id"]})
+    with pytest.raises(LookupError):
+        service.report(job["id"])
+    with pytest.raises(LookupError):
+        service.report(job["id"], "foreign-session")
+    assert service.report(job["id"], gpu)["result"]["summary"]["count"] == 15
 
 
 def test_stream_metrics_use_actual_token_counters(monkeypatch):

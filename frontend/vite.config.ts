@@ -4,8 +4,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": "http://localhost:58000",
-      "/health": "http://localhost:58000",
+      "/api": process.env.RECONFLOW_API_URL || "http://localhost:58000",
+      "/health": process.env.RECONFLOW_API_URL || "http://localhost:58000",
     },
   },
 });

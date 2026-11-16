@@ -182,3 +182,11 @@ public protocol uses five fixtures, one excluded warmup, three sequential repeti
 4096 context tokens, a 512 output-token ceiling and temperature zero. Cache counters are
 reported when supplied, otherwise null; cache is not claimed to be disabled. Download
 and initial model-load times are separate from local runner TTFT/generation timing.
+
+Comparison/workspace queries return bounded summaries rather than arrays of full sample
+outputs, avoiding the Data API response-size ceiling. Individual public/private report
+routes enforce their respective visibility before loading one bounded detailed report.
+Vast inventory uses the SDK's paginated v1 method with a minimal field selection: the
+convenience inventory method performs float arithmetic on timestamps and is incompatible
+with Decimal-preserving JSON decoding. Provider inventory never fetches runner environment
+values. The dashboard renders model output as plain text.

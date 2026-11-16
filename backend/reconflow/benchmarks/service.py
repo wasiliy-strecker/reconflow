@@ -267,7 +267,7 @@ def workspace(session):
             {"session": session},
         )
         requests = db.execute(
-            "SELECT r.id,r.lease_id,r.status,r.progress,r.result,r.error,r.created_at FROM gpu_requests r JOIN gpu_leases l ON l.id=r.lease_id WHERE l.session_id=:session ORDER BY r.created_at DESC LIMIT 30",
+            "SELECT r.id,r.lease_id,r.status,r.progress,r.result - 'samples' AS result,r.error,r.created_at FROM gpu_requests r JOIN gpu_leases l ON l.id=r.lease_id WHERE l.session_id=:session ORDER BY r.created_at DESC LIMIT 10",
             {"session": session},
         )
         budget = db.one(
@@ -372,5 +372,16 @@ def scrub_sessions(db, session=None):
 def results():
     with transaction() as db:
         return db.execute(
-            "SELECT r.id,r.protocol,r.result,r.finished_at,l.model,l.offer->>'gpu' AS gpu FROM gpu_requests r JOIN gpu_leases l ON l.id=r.lease_id WHERE r.public AND r.status='succeeded' ORDER BY r.finished_at DESC LIMIT 100"
+            "SELECT r.id,r.protocol,r.result - 'samples' AS result,r.finished_at,l.model,l.offer->>'gpu' AS gpu FROM gpu_requests r JOIN gpu_leases l ON l.id=r.lease_id WHERE r.public AND r.status='succeeded' ORDER BY r.finished_at DESC LIMIT 100"
         )
+
+
+def report(identifier, session=None):
+    with transaction() as db:
+        row = db.one(
+            "SELECT r.result FROM gpu_requests r JOIN gpu_leases l ON l.id=r.lease_id WHERE r.id=:id AND r.status='succeeded' AND ((CAST(:session AS text) IS NULL AND r.public) OR l.session_id=:session)",
+            {"id": identifier, "session": session},
+        )
+    if not row:
+        raise LookupError("Messbericht nicht gefunden.")
+    return row
