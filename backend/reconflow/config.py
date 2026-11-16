@@ -38,6 +38,24 @@ class Settings(BaseSettings):
     max_csv_rows: int = 10000
     max_jobs_per_session: int = 30
     max_sessions_per_hour: int = 100
+    benchmarks_enabled: bool = False
+    vast_api_key: SecretStr = SecretStr("")
+    vast_secret_arn: str = ""
+    benchmark_operator_password: SecretStr = SecretStr("")
+    benchmark_operator_secret_arn: str = ""
+    gpu_monthly_budget_eur: Decimal = Decimal("10")
+    gpu_session_budget_eur: Decimal = Decimal("1")
+    gpu_usd_to_eur: Decimal = Decimal("1.10")
+    gpu_max_minutes: int = 30
+    gpu_idle_seconds: int = 300
+    gpu_startup_seconds: int = 600
+    gpu_request_seconds: int = 120
+    gpu_disk_gb: int = 30
+    gpu_download_gb: Decimal = Decimal("25")
+    gpu_upload_gb: Decimal = Decimal("1")
+    gpu_runner_image: str = ""
+    gpu_runner_artifact_key: str = ""
+    gpu_runner_artifact_sha256: str = ""
 
     @property
     def public_demo(self) -> bool:
@@ -47,20 +65,20 @@ class Settings(BaseSettings):
 @lru_cache
 def settings() -> Settings:
     config = Settings()
-    if config.session_secret_arn or config.openai_secret_arn:
+    secret_fields = {
+        "session_secret": config.session_secret_arn,
+        "openai_api_key": config.openai_secret_arn,
+        "vast_api_key": config.vast_secret_arn,
+        "benchmark_operator_password": config.benchmark_operator_secret_arn,
+    }
+    if any(secret_fields.values()):
         import boto3
 
         client = boto3.client("secretsmanager", region_name=config.aws_region)
-        for name in ["session_secret", "openai"]:
-            arn = (
-                config.session_secret_arn if name == "session_secret" else config.openai_secret_arn
-            )
+        for name, arn in secret_fields.items():
             if arn:
                 value = client.get_secret_value(SecretId=arn)["SecretString"]
-                if name == "session_secret":
-                    config.session_secret = SecretStr(value)
-                else:
-                    config.openai_api_key = SecretStr(value)
+                setattr(config, name, SecretStr(value))
     if len(config.session_secret.get_secret_value()) < 32:
         raise RuntimeError("SESSION_SECRET must contain at least 32 characters")
     return config

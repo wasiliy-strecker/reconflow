@@ -122,3 +122,20 @@ The first AWS acceptance observed zero-ACU pause and a 23.92-second browser star
 from that pause. The UI handled transient 503 responses before creating the session;
 no AI request was part of that resume test. Use CloudWatch metrics to measure idle
 capacity, because direct instance-log diagnostics can interfere with auto-pause.
+
+## GPU benchmarks
+
+The GPU benchmark extension shares the existing FastAPI, React, SQS, Aurora/Data API,
+S3 and Secrets Manager boundaries. Vast.ai supplies single on-demand GPUs; AWS remains
+in Stockholm. Paid GPU execution defaults to disabled. The agreed application limits
+are EUR 10/month, EUR 1/lease, 30 minutes, 5 minutes idle and one active lease globally.
+Public users select bundled synthetic prompts; arbitrary prompts require a short-lived
+operator session. GPU accounting is separate from OpenAI and uses Decimal throughout.
+
+GPU leases, requests and the budget ledger outlive demo sessions. Session deletion
+must scrub private prompt/output payloads and request termination before detaching the
+lease. A global SQL admission lock plus a partial unique index protects concurrency;
+idempotency keys bind to request fingerprints. A full session allowance is reserved
+before renting. Unknown provider outcomes never release reservations or repeat creation.
+SDK 1.11.0 uses retry as an attempt count; the adapter additionally enforces exactly one
+HTTP attempt, disables redirects and decodes provider prices directly to Decimal.

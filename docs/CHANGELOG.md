@@ -180,3 +180,13 @@
   acceptance. The owner explicitly requested keeping AWS reachable for personal tests.
   Local health/config still pass with OpenAI enabled. Documentation diff checks passed;
   no application or infrastructure configuration changed after their validated deployment.
+
+## 2026-11-16 20:03 CET — GPU benchmark foundation
+
+- Added isolated GPU lease/request tables, a Decimal budget ledger, signed rental labels,
+  fixed synthetic workloads, provider adapter, operator authentication and admission rules.
+- Added server-only configuration and pinned the official Vast.ai SDK with hashed runtime
+  dependencies. Paid GPU execution defaults to disabled; no provider calls or rentals ran.
+- Validation: 12 focused protocol, transport, budget, concurrency, privacy and adapter tests
+  passed; Ruff passed. Integration checks use a separate local benchmark test database.
+- Applied the additive migration locally. No AWS deployment, push or publication occurred.
