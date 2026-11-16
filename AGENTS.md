@@ -16,7 +16,7 @@ docs/CHANGELOG.md with Europe/Berlin timestamps. Keep durable decisions in docs/
 - AWS experience: new AWS experience. Project region: `eu-north-1` (Stockholm).
 - User guidance level: `MEDIUM`, short progress updates and questions only for material ambiguity.
 - Toolkit catalog/setup uses `us-east-1`; this does not authorize regional application resources there.
-- Work on ReconFlow from `<project-root>`. Do not append AWS rules to Contest Gallery repositories.
+- Work from the ReconFlow repository root. Do not append AWS rules to Contest Gallery repositories.
 - Terraform/workflow defaults target Stockholm. The Free Plan uses a separately prepared Aurora
   Express cluster; GitHub OIDC is disabled by default. Recheck plan/credits and IAM restrictions
   before a separately authorized deployment. Do not upgrade to Paid or Advanced automatically.

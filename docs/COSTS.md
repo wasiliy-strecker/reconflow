@@ -7,8 +7,9 @@ free-tier allowances and account credits. OpenAI billing is separate.
 ## Free Plan and payment boundary
 
 The owner wants AWS testing without an AWS payment while continuing to use paid OpenAI.
-The authenticated post-deployment 2026-11-15 query confirmed ACTIVE FREE, positive credits remaining,
-expiry <private-plan-expiry>. This is a snapshot, not an ongoing balance guarantee.
+The authenticated post-deployment check confirmed ACTIVE FREE with positive credits.
+Exact balances and expiration dates remain private operator information. Check the
+current status before relying on this test deployment's availability.
 While the Free Plan is active, eligible usage consumes credits/free allowances rather
 than producing a payable AWS bill. It ends at expiry or credit exhaustion. No upgrade
 to Paid or Advanced is performed by the scripts. Check AWS Settings > Billing and

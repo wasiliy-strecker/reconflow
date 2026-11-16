@@ -1,9 +1,5 @@
 # ReconFlow
 
-GPU benchmarking is available as a separate **GPU Benchmarks** area: Vast.ai rental
-integration, an Ollama runner, durable comparisons and bounded automatic cleanup.
-Paid execution is disabled by default. See [GPU setup, measurements and live acceptance](docs/GPU_BENCHMARKS.md).
-
 **Rechnungen mit KI auslesen. Angaben prüfen. Zahlungseingänge nachvollziehbar abgleichen.**
 
 Ein eigenständiges Portfolio-Projekt von wasiliy-strecker mit Python, FastAPI,
@@ -82,10 +78,17 @@ demselben Container-Image mit unterschiedlichen Einstiegspunkten.
 Details: [Architektur](docs/ARCHITECTURE.md), [Dateiformate](docs/DATA_FORMATS.md),
 [AWS-Betrieb](docs/AWS_RUNBOOK.md), [Kostenannahmen](docs/COSTS.md).
 
+Der Quellcode enthält zusätzlich einen Bereich **GPU Benchmarks** mit Vast.ai-Anbindung,
+Ollama-Runner und unabhängiger Aufräumlogik. Kostenpflichtige GPU-Ausführung ist standardmäßig
+deaktiviert. Dieser neue Bereich wurde noch nicht in die verlinkte AWS-Demo ausgerollt;
+echte Hardware-Messungen stehen aus. Siehe [GPU-Setup und Prüfgrenzen](docs/GPU_BENCHMARKS.md).
+
 ## Nachgewiesener Stand
 
-- 55 Python-Tests mit lokalen PostgreSQL-/S3-Adaptern, simulierten KI-Antworten und AWS-Vorbereitung.
-- Sechs Terraform-Tests mit simuliertem AWS-Provider prüfen Stockholm, Free-Plan-Vorgaben und optionales OIDC.
+- 73 Python-Tests mit lokalen PostgreSQL-/S3-Adaptern, simulierten KI-Antworten,
+  AWS-Vorbereitung und GPU-Lebenszyklus.
+- Acht Terraform-Tests mit simuliertem AWS-Provider prüfen Stockholm, Free-Plan-Vorgaben,
+  optionales OIDC und die deaktivierte GPU-Vermietung.
 - Ein Browser-Test deckt Import, Prüfung, Abgleich, manuelle Zuordnung und XLSX-Download ab.
   Lokal zusätzlich mit echten OpenAI-Aufrufen für Extraktion und Zuordnung ausgeführt.
 - Echte KI-Smoke-Evaluation: **27/27 Kopffelder** bei drei synthetischen PDF-/PNG-/JPEG-Rechnungen.
@@ -101,7 +104,8 @@ CSRF/Origin-Schutz, Beispiel-Dateigrenzen und gesperrter direkter S3-Zugriff.
 Terraform meldet nach dem Deployment keine Abweichungen. Die Datenbank pausierte
 nachweislich auf 0 ACU; der anschließende Browserstart benötigte rund 24 Sekunden.
 Nach einer Ruhephase daher kurz auf das Laden der Beispieldaten warten.
-Die GitHub-Workflows sind vorbereitet, aber noch nicht auf GitHub ausgeführt.
+GitHub Actions prüft Quellcode, Tests, Build und die gesamte Historie auf Zugangsdaten.
+Der AWS-Release-Workflow wird ausschließlich manuell gestartet; GitHub-OIDC ist noch deaktiviert.
 
 ## Entwickeln und testen
 

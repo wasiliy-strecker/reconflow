@@ -235,3 +235,25 @@
 - Validation: all 18 focused GPU tests passed, including both new fault-injection cases;
   Ruff check/format and git diff checks passed. Frontend and Terraform are unchanged.
 - Temporary isolated API/worker/browser preview services were stopped after verification.
+
+## 2026-11-16 21:27 CET — Public GitHub publication preparation
+
+- The owner requested a public application portfolio repository without private data.
+  Reviewed all 14 existing commits, every reachable file version, commit metadata and
+  both screenshots. Gitleaks 8.30.1 found no credentials; exact comparisons against
+  private local key values also found no matches. No private environment, state or
+  customer document files were tracked.
+- Prepared public GitHub-username attribution and the account's numeric-ID noreply
+  address. Removed private operator identifiers/billing snapshots from documentation
+  and regenerated the two screenshots using synthetic fixtures with no paid AI calls.
+  The historical copies will receive the same cleanup before the first upload.
+- Preserved the complete original history in an ignored mode-0600 local Git bundle.
+  Added a full-history, checksum-pinned Gitleaks CI job and clarified that the newer
+  GPU benchmark source has not been deployed or tested on rented hardware.
+- Verification: 48 unit/adapter tests and 25 integration tests passed. Integration
+  used a temporary local database that was removed afterward and mocked dispatch;
+  the existing application and budget ledger were preserved. Ruff check/format,
+  TypeScript/production build, invoice browser flow, eight mocked Terraform plans,
+  Terraform formatting, CI YAML parsing and diff checks passed.
+- No AWS deployment, paid AI/GPU call or provider credential upload is part of this
+  publication step. Final rewritten-history scan and GitHub CI follow before handoff.

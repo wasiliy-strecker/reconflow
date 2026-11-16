@@ -8,12 +8,13 @@ Paid/Advanced upgrades, DNS changes and Marketplace submission remain outside sc
 
 ## Selected project and verified access — 2026-11-15
 
-- New AWS experience, project **the selected portfolio project**, selected Region **eu-north-1
+- New AWS experience, selected portfolio project, selected Region **eu-north-1
   (Stockholm)**, local CLI profile **portfolio**. The profile is a reusable login
   label, not an application name.
 - AWS CLI 2.40.3, Terraform 1.13.5, locked AWS provider 6.73.0. Browser login and STS
-  succeeded. Post-deployment Free Plan query: ACTIVE, positive remaining credits, expiry
-  <private-plan-expiry>. These are point-in-time observations.
+  succeeded. The post-deployment Free Plan query confirmed ACTIVE with positive credits.
+  Exact credit balances and plan expiry are private operator information; query them
+  before deployment rather than relying on a published snapshot.
 - Aurora PostgreSQL 17.7 is available with zero-ACU support. Express does not accept
   an engine version pin: the current default is **17.9**, also supporting zero ACUs.
   The preparation command resolves and checks the current default on every new setup.
@@ -28,9 +29,12 @@ Paid/Advanced upgrades, DNS changes and Marketplace submission remain outside sc
 ## Deployment verification — 2026-11-15
 
 - Distribution `<distribution-id>`, all regional application resources in Stockholm.
+  Obtain the actual distribution ID from `terraform output -raw distribution_id`.
   Runtime source revision `4cd28b39a6f8081d29d82c9d029ce106508d835e`; later commits
   changed operator tooling, infrastructure and documentation only. Immutable image:
   `sha256:8c1cde0c613604fcfbb7537598c7636294679c0d67ce155ccd7438f871873039`.
+  The recorded runtime revision predates the publication privacy rewrite; its original
+  ECR tag and immutable digest remain unchanged even though public Git commit IDs differ.
 - Migration Lambda invoked twice successfully: `{"ok":true}`, 4.72 s then 0.41 s
   measured from the operator. A subsequent real Terraform plan reports no changes.
 - Public browser flow passed without AI (25.2 s), then with one extraction and one

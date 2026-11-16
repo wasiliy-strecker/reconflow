@@ -123,6 +123,17 @@ from that pause. The UI handled transient 503 responses before creating the sess
 no AI request was part of that resume test. Use CloudWatch metrics to measure idle
 capacity, because direct instance-log diagnostics can interfere with auto-pause.
 
+## Public source repository
+
+The owner approved a public GitHub repository for applications on 2026-11-16.
+Publication uses the public GitHub username and its verified numeric-ID noreply address
+for commit attribution. Private email addresses, host paths, project display names,
+distribution identifiers and billing snapshots are excluded from the published history.
+Screenshots contain only synthetic fixtures and public attribution. The original local
+history is retained in an ignored private backup; its commit IDs differ after cleanup.
+Gitleaks scans the complete history in CI. The source publication does not redeploy AWS
+or enable paid GPU execution; those remain separate actions.
+
 ## GPU benchmarks
 
 The GPU benchmark extension shares the existing FastAPI, React, SQS, Aurora/Data API,
