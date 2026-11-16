@@ -6,8 +6,16 @@ from decimal import Decimal
 PROTOCOL = "reconflow-text-v1"
 OPTIONS = {"num_ctx": 4096, "num_predict": 512, "temperature": 0, "seed": 42}
 MODELS = {
-    "gemma3:4b-it-q4_K_M": {"min_vram_mib": 8192, "quantization": "Q4_K_M"},
-    "gemma3:12b-it-q4_K_M": {"min_vram_mib": 16384, "quantization": "Q4_K_M"},
+    "gemma3:4b-it-q4_K_M": {
+        "min_vram_mib": 7680,
+        "quantization": "Q4_K_M",
+        "digest": "68ceab7e468a31c988b44d5a4984a0e21f58c4f7158c6ce29c1804babac38df7",
+    },
+    "gemma3:12b-it-q4_K_M": {
+        "min_vram_mib": 15360,
+        "quantization": "Q4_K_M",
+        "digest": "b92b218582c521ba287f38f1d6057dcd3c6cbff036f13cac97b5d861f5e58ec3",
+    },
 }
 PROMPTS = [
     {

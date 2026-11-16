@@ -190,3 +190,17 @@
 - Validation: 12 focused protocol, transport, budget, concurrency, privacy and adapter tests
   passed; Ruff passed. Integration checks use a separate local benchmark test database.
 - Applied the additive migration locally. No AWS deployment, push or publication occurred.
+
+## 2026-11-16 20:24 CET — GPU runner, API and independent cleanup
+
+- Added authenticated runner callbacks, at-most-once claims, scoped progress/results,
+  public standard reports, private prompt controls and session deletion scrubbing.
+- Added the standalone Ollama runner with pinned model/runtime digests, real streaming
+  counters, monotonic latency measurement and sampled NVIDIA telemetry. The runner ZIP
+  generator is deterministic and performs no upload or rental.
+- Added durable SQS rental processing and provider-label reconciliation. Independent
+  cleanup survives unavailable SQL, ignores foreign instances and confirms disappearance
+  before releasing the concurrency slot. Budget debits remain deliberately conservative.
+- Validation: all 70 Python tests passed, including existing invoice integration tests;
+  Ruff passed. Runner/bootstrap imports and Zstandard/TLS availability passed inside the
+  pinned Python 3.14 container. No real GPU, Vast credential or AWS mutation was used.

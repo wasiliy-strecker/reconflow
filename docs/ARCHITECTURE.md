@@ -139,3 +139,46 @@ idempotency keys bind to request fingerprints. A full session allowance is reser
 before renting. Unknown provider outcomes never release reservations or repeat creation.
 SDK 1.11.0 uses retry as an attempt count; the adapter additionally enforces exactly one
 HTTP attempt, disables redirects and decodes provider prices directly to Decimal.
+
+The runner has no inbound ports and no provider/AWS credentials. A per-lease HMAC
+capability authenticates outbound HTTPS callbacks on narrowly exempted machine routes;
+browser routes retain Origin/CSRF/session checks. SQS dispatch uses the existing queue
+with a separate benchmark message discriminator. A durable claim precedes both rental
+creation and inference delivery. A lost inference claim is never automatically replayed.
+Sequence-numbered output snapshots and final reports are idempotent. Progress delivery
+runs off the inference-reading thread so AWS latency does not distort runner timing.
+
+The separately pinned GPU image is the official amd64 Python 3.14 slim image, with
+NVIDIA compute/utility capabilities requested from Vast. Python 3.14 supplies Zstandard
+decoding for the checksum-pinned Ollama archive. The AWS backend remains on Python 3.12.
+A small deterministic ZIP packages the standalone runner, bootstrap and manifest into
+the existing private S3 bucket; short-lived presigned downloads convey no AWS identity.
+The two Gemma model manifests are digest-pinned, checked before downloading and again
+after pulling. The GPU bootstrap itself still requires live hardware acceptance.
+
+A separate Lambda entrypoint in the same application image runs through EventBridge
+Scheduler every minute. Its S3 control records recover SQL-to-SQS dispatch gaps; signed
+provider labels recover creation responses lost before instance IDs were saved. It can
+destroy owned rentals even when SQL is down, never touches unsigned/foreign instances,
+and performs no SQL access when both provider inventory and control prefix are empty.
+New admissions require a recent healthy S3 watchdog heartbeat. Turning admission off
+does not stop cleanup. Confirmed deletion requires three provider inventory observations
+at least 55 seconds apart. Unknown creation retains the reservation through the hard
+lease deadline. Delete errors retain ownership and prevent further admission.
+
+The current ledger conservatively debits the full EUR 1 reservation after any attempted
+rental until external billing reconciliation is introduced. Planned cost is displayed
+separately, never described as the provider's actual invoice. Failures before an attempt
+release the reservation. Leases end at the earlier of 30 minutes and the Berlin month
+boundary; insufficient pre-boundary startup time rejects admission. Provider outages may
+delay destruction: neither the application budget nor AWS alarms promise an absolute
+provider-side spending cap. GPU activation requires deployed HTTPS and real private S3;
+local Moto endpoints are deliberately ineligible for paid rental.
+
+Public standard reports persist anonymously in Aurora and under benchmarks/reports/,
+outside the sessions/ object lifecycle. Raw private prompts and responses remain only
+in session-scoped SQL and are scrubbed during explicit/expired-session deletion. The
+public protocol uses five fixtures, one excluded warmup, three sequential repetitions,
+4096 context tokens, a 512 output-token ceiling and temperature zero. Cache counters are
+reported when supplied, otherwise null; cache is not claimed to be disabled. Download
+and initial model-load times are separate from local runner TTFT/generation timing.

@@ -34,7 +34,7 @@ class VastProvider:
         self.sdk.client = SingleAttemptClient(key, "https://console.vast.ai", retry=1, timeout=10)
 
     def offers(self, offer_id=None):
-        query = {"num_gpus": {"eq": 1}, "gpu_ram": {"gte": 8192}, "reliability2": {"gte": 0.98}}
+        query = {"num_gpus": {"eq": 1}, "gpu_ram": {"gte": 7680}, "reliability2": {"gte": 0.98}}
         if offer_id is not None:
             query["id"] = {"eq": offer_id}
         rows = self.sdk.search_offers(

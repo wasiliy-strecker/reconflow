@@ -53,7 +53,9 @@ class Settings(BaseSettings):
     gpu_disk_gb: int = 30
     gpu_download_gb: Decimal = Decimal("25")
     gpu_upload_gb: Decimal = Decimal("1")
-    gpu_runner_image: str = ""
+    gpu_runner_image: str = (
+        "python@sha256:1faf2343e747208b2a36e5f2b5ff908ec3b2d0078a6a7bfe73b535698fe83909"
+    )
     gpu_runner_artifact_key: str = ""
     gpu_runner_artifact_sha256: str = ""
 

@@ -19,11 +19,10 @@ def now():
 
 
 def timestamp(value):
-    return (
-        value
-        if isinstance(value, datetime)
-        else datetime.fromisoformat(value.replace(" ", "T")).replace(tzinfo=UTC)
+    parsed = (
+        value if isinstance(value, datetime) else datetime.fromisoformat(value.replace(" ", "T"))
     )
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 def event(db, lease_id, action):
@@ -62,6 +61,10 @@ def admission():
     c = settings()
     if not c.benchmarks_enabled or not configured():
         raise ValueError("GPU-Mieten sind noch nicht freigeschaltet.")
+    if c.aws_endpoint_url or not c.public_origin.startswith("https://"):
+        raise ValueError(
+            "Echte GPU-Mieten benötigen das bereitgestellte HTTPS-Backend und privates AWS S3."
+        )
     if not (
         0 < c.gpu_session_budget_eur <= c.gpu_monthly_budget_eur
         and 1 <= c.gpu_max_minutes <= 30
@@ -352,6 +355,7 @@ def insert_request(db, lease_id, key, prompts, public, hashed=None):
 
 
 def scrub_sessions(db, session=None):
+    db.execute("DELETE FROM gpu_rate_limits WHERE expires_at<now()")
     predicate = "s.id=:session" if session else "s.expires_at<now()"
     params = {"session": session} if session else {}
     leases = f"SELECT l.id FROM gpu_leases l JOIN sessions s ON s.id=l.session_id WHERE {predicate}"

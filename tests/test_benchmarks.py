@@ -73,6 +73,8 @@ def test_missing_provider_prices_fail_closed():
 def gpu(monkeypatch):
     c = settings()
     monkeypatch.setattr(c, "benchmarks_enabled", True)
+    monkeypatch.setattr(c, "aws_endpoint_url", None)
+    monkeypatch.setattr(c, "public_origin", "https://synthetic.example")
     monkeypatch.setattr(c, "vast_api_key", SecretStr("synthetic-only"))
     monkeypatch.setattr(c, "gpu_runner_image", "example/runner@sha256:" + "a" * 64)
     monkeypatch.setattr(c, "gpu_runner_artifact_key", "benchmarks/artifacts/test.tgz")

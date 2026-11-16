@@ -10,6 +10,8 @@ from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
 from reconflow import fixtures, service, storage
+from reconflow.benchmarks import api as benchmarks_api
+from reconflow.benchmarks import service as benchmarks_service
 from reconflow.config import settings
 from reconflow.db import dumps, transaction
 from reconflow.domain import InvoiceData
@@ -59,7 +61,8 @@ def signature(session, purpose):
 
 @app.middleware("http")
 async def guards(request: Request, call_next):
-    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+    machine = request.method == "POST" and benchmarks_api.RUNNER_PATH.fullmatch(request.url.path)
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"} and not machine:
         origin = request.headers.get("origin")
         if origin and origin != settings().public_origin:
             return JSONResponse({"detail": "Diese Herkunft ist nicht erlaubt."}, status_code=403)
@@ -158,6 +161,7 @@ def current_session(s: Session):
 @app.delete("/api/demo-sessions/current")
 def delete_session(s: Session, response: Response):
     with transaction() as db:
+        benchmarks_service.scrub_sessions(db, s)
         db.execute("DELETE FROM sessions WHERE id=:id", {"id": s})
     # S3 lifecycle expires files independently, even if the user closes the browser.
     response.delete_cookie("reconflow_session", path="/")
@@ -388,4 +392,6 @@ def usage(s: Session):
     return SafeJSON({"calls": rows, "budget_eur": str(settings().ai_monthly_budget_eur)})
 
 
+app.include_router(benchmarks_api.router(session))
+app.include_router(benchmarks_api.runner_router)
 handler = Mangum(app, lifespan="off")
