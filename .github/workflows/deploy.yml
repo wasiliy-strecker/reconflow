@@ -46,7 +46,7 @@ jobs:
           IMAGE_URI: ${{ steps.registry.outputs.registry }}/reconflow@${{ steps.image.outputs.digest }}
         run: |
           mkdir release
-          for service in api worker migrate gpu_watchdog; do
+          for service in api worker migrate; do
             aws lambda get-function --function-name "reconflow-$service" --query 'Code.ImageUri' --output text > "release/previous-$service.txt"
           done
           printf '%s\n' "$IMAGE_URI" > release/image.txt
@@ -58,7 +58,7 @@ jobs:
           assert 'FunctionError' not in json.load(open('release/migration-meta.json'))
           assert json.load(open('release/migration-result.json')).get('ok') is True
           PY
-          for service in gpu_watchdog worker api; do
+          for service in worker api; do
             aws lambda update-function-code --function-name "reconflow-$service" --image-uri "$IMAGE_URI" > /dev/null
             aws lambda wait function-updated-v2 --function-name "reconflow-$service"
           done

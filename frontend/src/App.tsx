@@ -7,7 +7,6 @@ import {
   CheckCheck,
   ChevronRight,
   CircleAlert,
-  Cpu,
   FileCheck2,
   FileSpreadsheet,
   FileText,
@@ -24,8 +23,6 @@ import {
   X,
   Zap,
 } from "lucide-react";
-
-import Benchmarks from "./Benchmarks";
 
 type InvoiceData = {
   invoice_number: string | null;
@@ -516,7 +513,6 @@ export default function App() {
             ["matches", "Zahlungsabgleich", CheckCheck],
             ["payments", "Zahlungen", Wallet],
             ["activity", "Aktivitäten", LayoutDashboard],
-            ["benchmarks", "GPU Benchmarks", Cpu],
           ].map(([key, label, Icon]) => {
             const I = Icon as typeof FileText;
             return (
@@ -573,7 +569,6 @@ export default function App() {
                   matches: "Zahlungsabgleich",
                   payments: "Zahlungen",
                   activity: "Aktivitäten",
-                  benchmarks: "GPU Benchmarks",
                 }[tab]
               }
             </strong>
@@ -587,715 +582,697 @@ export default function App() {
           </div>
         </header>
         <main>
-          {tab === "benchmarks" ? (
-            <Benchmarks api={api} ensureSession={ensureSession} />
-          ) : (
-            <>
-              <div className="page-heading">
-                <div>
-                  <div className="eyebrow">WENIGER SUCHEN. MEHR ÜBERBLICK.</div>
-                  <h1>
+          <div className="page-heading">
+            <div>
+              <div className="eyebrow">WENIGER SUCHEN. MEHR ÜBERBLICK.</div>
+              <h1>
+                {
+                  {
+                    invoices: "Rechnungen verstehen.",
+                    matches: "Jede Zahlung an ihrem Platz.",
+                    payments: "Zahlungseingänge im Blick.",
+                    activity: "Jeder Schritt nachvollziehbar.",
+                  }[tab]
+                }
+              </h1>
+              <p>
+                Von der Rechnung zur passenden Zahlung. Mit KI und klaren
+                Regeln.
+              </p>
+            </div>
+            <div className="heading-actions">
+              <button
+                className="button secondary"
+                onClick={() => {
+                  setImportKind("payments");
+                  setShowImport(true);
+                }}
+                disabled={!!busy}
+              >
+                <FileSpreadsheet size={17} />
+                CSV importieren
+              </button>
+              <button
+                className="button primary"
+                onClick={() => {
+                  setImportKind("document");
+                  setShowImport(true);
+                }}
+                disabled={!!busy}
+              >
+                <Plus size={18} />
+                Rechnung hinzufügen
+              </button>
+            </div>
+          </div>
+          <div className="demo-banner">
+            <div className="banner-icon">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <strong>Dein Platz zum Ausprobieren</strong>
+              <span>
+                Alle mitgelieferten Daten sind fiktiv. Deine Sitzung ist für
+                andere Besucher nicht sichtbar.
+              </span>
+            </div>
+            <span className="demo-tag">BEISPIELDATEN</span>
+          </div>
+          {error && (
+            <div role="alert" className="message error">
+              <CircleAlert size={19} />
+              <span>{error}</span>
+              <button
+                aria-label="Meldung schließen"
+                onClick={() => setError("")}
+              >
+                <X size={17} />
+              </button>
+            </div>
+          )}
+          {notice && !error && (
+            <div role="status" className="message success">
+              <Check size={18} />
+              <span>{notice}</span>
+              <button
+                aria-label="Meldung schließen"
+                onClick={() => setNotice("")}
+              >
+                <X size={17} />
+              </button>
+            </div>
+          )}
+          {busy && (
+            <div className="working" role="status">
+              <LoaderCircle className="spin" size={18} />
+              {busy}
+            </div>
+          )}
+          {workspace.run?.stale && (
+            <div role="status" className="message">
+              Die Rechnungen wurden geändert. Bitte den Abgleich erneut starten.
+            </div>
+          )}
+          <section className="stats" aria-label="Übersicht">
+            <div className="stat">
+              <div className="stat-top">
+                Rechnungsvolumen <FileText size={18} />
+              </div>
+              <strong>
+                {workspace.invoices.length
+                  ? mixedCurrencies
+                    ? "Mehrere Währungen"
+                    : money(total, currency)
+                  : "—"}
+              </strong>
+              <span>
+                {workspace.invoices.length} Rechnungen im Arbeitsplatz
+              </span>
+            </div>
+            <div className="stat">
+              <div className="stat-top">
+                Zugeordnet{" "}
+                <span className="stat-icon green">
+                  <CheckCheck size={17} />
+                </span>
+              </div>
+              <strong>
+                {workspace.run ? matched : "—"}
+                <small>Rechnungen</small>
+              </strong>
+              <span>Referenz, Betrag und Währung stimmen</span>
+            </div>
+            <div className="stat">
+              <div className="stat-top">
+                Noch zu prüfen{" "}
+                <span className="stat-icon amber">
+                  <CircleAlert size={17} />
+                </span>
+              </div>
+              <strong>
+                {workspace.run ? review : "—"}
+                <small>Fälle</small>
+              </strong>
+              <span>Abweichungen nachvollziehbar klären</span>
+            </div>
+            <div className="stat">
+              <div className="stat-top">
+                Zahlungseingänge <Wallet size={18} />
+              </div>
+              <strong>
+                {workspace.payments.length}
+                <small>Einträge</small>
+              </strong>
+              <span>Über CSV importiert und geprüft</span>
+            </div>
+          </section>
+          {!workspace.invoices.length && !missingDocs.length && (
+            <section className="welcome-card">
+              <div className="welcome-copy">
+                <span className="pill green">
+                  <Sparkles size={14} />
+                  DEIN ERSTER ABGLEICH
+                </span>
+                <h2>
+                  Sechs Rechnungen.
+                  <br />
+                  Ein klarer Überblick.
+                </h2>
+                <p>
+                  Entdecke passende Zahlungen, eine Teilzahlung und einen
+                  möglichen Doppeleingang. Oder lass eine Beispielrechnung
+                  direkt von der KI auslesen.
+                </p>
+                <button
+                  className="button primary"
+                  onClick={startDemo}
+                  disabled={!!busy}
+                >
+                  Demo starten <ArrowRight size={17} />
+                </button>
+                <small>Ohne Anmeldung · Mit herunterladbaren Beispielen</small>
+              </div>
+              <div className="welcome-visual" aria-hidden="true">
+                <div className="mini-doc">
+                  <div className="mini-doc-head">
+                    <FileText size={20} />
+                    <span>
+                      RE-2026-1001<small>Nordlicht Studio</small>
+                    </span>
+                    <span className="mini-amount">1.190,00 €</span>
+                  </div>
+                  <div className="doc-line" />
+                  <div className="doc-line short" />
+                  <div className="doc-line" />
+                </div>
+                <div className="connection">
+                  <span />
+                  <Sparkles size={20} />
+                  <span />
+                </div>
+                <div className="mini-match">
+                  <span className="check-circle">
+                    <Check size={18} />
+                  </span>
+                  <span>
+                    Zahlung zugeordnet
+                    <small>Referenz und Betrag stimmen überein</small>
+                  </span>
+                </div>
+                <div className="floating-label">
+                  <ShieldCheck size={14} />
+                  Nachvollziehbar bis ins Detail
+                </div>
+              </div>
+            </section>
+          )}
+          <section className="table-card">
+            <div className="table-header">
+              <div>
+                <h2>
+                  {
                     {
-                      {
-                        invoices: "Rechnungen verstehen.",
-                        matches: "Jede Zahlung an ihrem Platz.",
-                        payments: "Zahlungseingänge im Blick.",
-                        activity: "Jeder Schritt nachvollziehbar.",
-                      }[tab]
-                    }
-                  </h1>
-                  <p>
-                    Von der Rechnung zur passenden Zahlung. Mit KI und klaren
-                    Regeln.
-                  </p>
-                </div>
-                <div className="heading-actions">
-                  <button
-                    className="button secondary"
-                    onClick={() => {
-                      setImportKind("payments");
-                      setShowImport(true);
-                    }}
-                    disabled={!!busy}
-                  >
-                    <FileSpreadsheet size={17} />
-                    CSV importieren
-                  </button>
-                  <button
-                    className="button primary"
-                    onClick={() => {
-                      setImportKind("document");
-                      setShowImport(true);
-                    }}
-                    disabled={!!busy}
-                  >
-                    <Plus size={18} />
-                    Rechnung hinzufügen
-                  </button>
-                </div>
-              </div>
-              <div className="demo-banner">
-                <div className="banner-icon">
-                  <ShieldCheck size={20} />
-                </div>
-                <div>
-                  <strong>Dein Platz zum Ausprobieren</strong>
-                  <span>
-                    Alle mitgelieferten Daten sind fiktiv. Deine Sitzung ist für
-                    andere Besucher nicht sichtbar.
-                  </span>
-                </div>
-                <span className="demo-tag">BEISPIELDATEN</span>
-              </div>
-              {error && (
-                <div role="alert" className="message error">
-                  <CircleAlert size={19} />
-                  <span>{error}</span>
-                  <button
-                    aria-label="Meldung schließen"
-                    onClick={() => setError("")}
-                  >
-                    <X size={17} />
-                  </button>
-                </div>
-              )}
-              {notice && !error && (
-                <div role="status" className="message success">
-                  <Check size={18} />
-                  <span>{notice}</span>
-                  <button
-                    aria-label="Meldung schließen"
-                    onClick={() => setNotice("")}
-                  >
-                    <X size={17} />
-                  </button>
-                </div>
-              )}
-              {busy && (
-                <div className="working" role="status">
-                  <LoaderCircle className="spin" size={18} />
-                  {busy}
-                </div>
-              )}
-              {workspace.run?.stale && (
-                <div role="status" className="message">
-                  Die Rechnungen wurden geändert. Bitte den Abgleich erneut
-                  starten.
-                </div>
-              )}
-              <section className="stats" aria-label="Übersicht">
-                <div className="stat">
-                  <div className="stat-top">
-                    Rechnungsvolumen <FileText size={18} />
-                  </div>
-                  <strong>
-                    {workspace.invoices.length
-                      ? mixedCurrencies
-                        ? "Mehrere Währungen"
-                        : money(total, currency)
-                      : "—"}
-                  </strong>
-                  <span>
-                    {workspace.invoices.length} Rechnungen im Arbeitsplatz
-                  </span>
-                </div>
-                <div className="stat">
-                  <div className="stat-top">
-                    Zugeordnet{" "}
-                    <span className="stat-icon green">
-                      <CheckCheck size={17} />
-                    </span>
-                  </div>
-                  <strong>
-                    {workspace.run ? matched : "—"}
-                    <small>Rechnungen</small>
-                  </strong>
-                  <span>Referenz, Betrag und Währung stimmen</span>
-                </div>
-                <div className="stat">
-                  <div className="stat-top">
-                    Noch zu prüfen{" "}
-                    <span className="stat-icon amber">
-                      <CircleAlert size={17} />
-                    </span>
-                  </div>
-                  <strong>
-                    {workspace.run ? review : "—"}
-                    <small>Fälle</small>
-                  </strong>
-                  <span>Abweichungen nachvollziehbar klären</span>
-                </div>
-                <div className="stat">
-                  <div className="stat-top">
-                    Zahlungseingänge <Wallet size={18} />
-                  </div>
-                  <strong>
-                    {workspace.payments.length}
-                    <small>Einträge</small>
-                  </strong>
-                  <span>Über CSV importiert und geprüft</span>
-                </div>
-              </section>
-              {!workspace.invoices.length && !missingDocs.length && (
-                <section className="welcome-card">
-                  <div className="welcome-copy">
-                    <span className="pill green">
-                      <Sparkles size={14} />
-                      DEIN ERSTER ABGLEICH
-                    </span>
-                    <h2>
-                      Sechs Rechnungen.
-                      <br />
-                      Ein klarer Überblick.
-                    </h2>
-                    <p>
-                      Entdecke passende Zahlungen, eine Teilzahlung und einen
-                      möglichen Doppeleingang. Oder lass eine Beispielrechnung
-                      direkt von der KI auslesen.
-                    </p>
-                    <button
-                      className="button primary"
-                      onClick={startDemo}
-                      disabled={!!busy}
-                    >
-                      Demo starten <ArrowRight size={17} />
-                    </button>
-                    <small>
-                      Ohne Anmeldung · Mit herunterladbaren Beispielen
-                    </small>
-                  </div>
-                  <div className="welcome-visual" aria-hidden="true">
-                    <div className="mini-doc">
-                      <div className="mini-doc-head">
-                        <FileText size={20} />
-                        <span>
-                          RE-2026-1001<small>Nordlicht Studio</small>
-                        </span>
-                        <span className="mini-amount">1.190,00 €</span>
-                      </div>
-                      <div className="doc-line" />
-                      <div className="doc-line short" />
-                      <div className="doc-line" />
-                    </div>
-                    <div className="connection">
-                      <span />
-                      <Sparkles size={20} />
-                      <span />
-                    </div>
-                    <div className="mini-match">
-                      <span className="check-circle">
-                        <Check size={18} />
-                      </span>
-                      <span>
-                        Zahlung zugeordnet
-                        <small>Referenz und Betrag stimmen überein</small>
-                      </span>
-                    </div>
-                    <div className="floating-label">
-                      <ShieldCheck size={14} />
-                      Nachvollziehbar bis ins Detail
-                    </div>
-                  </div>
-                </section>
-              )}
-              <section className="table-card">
-                <div className="table-header">
-                  <div>
-                    <h2>
-                      {
-                        {
-                          invoices: "Deine Rechnungen",
-                          matches: "Ergebnisse des Abgleichs",
-                          payments: "Deine Zahlungen",
-                          activity: "Verarbeitungsprotokoll",
-                        }[tab]
-                      }{" "}
-                      <span className="count">
-                        {tab === "invoices"
-                          ? workspace.invoices.length
-                          : tab === "payments"
-                            ? workspace.payments.length
-                            : tab === "matches"
-                              ? rows.length
-                              : workspace.jobs.length}
-                      </span>
-                    </h2>
-                    <p>
-                      {tab === "invoices"
-                        ? "Original ansehen, Angaben prüfen und freigeben."
+                      invoices: "Deine Rechnungen",
+                      matches: "Ergebnisse des Abgleichs",
+                      payments: "Deine Zahlungen",
+                      activity: "Verarbeitungsprotokoll",
+                    }[tab]
+                  }{" "}
+                  <span className="count">
+                    {tab === "invoices"
+                      ? workspace.invoices.length
+                      : tab === "payments"
+                        ? workspace.payments.length
                         : tab === "matches"
-                          ? "Jede Zuordnung hat einen nachvollziehbaren Grund."
-                          : tab === "payments"
-                            ? "Zahlungsdaten bleiben unverändert. Zuordnungen werden separat protokolliert."
-                            : "Echte KI-Aufrufe und gespeicherte Beispiele sind klar gekennzeichnet."}
-                    </p>
-                  </div>
-                  <div className="table-actions">
-                    {workspace.invoices.length > 0 && (
-                      <button
-                        className="button primary small-button"
-                        onClick={match}
-                        disabled={!!busy}
-                      >
-                        <CheckCheck size={17} />
-                        Abgleich starten
-                      </button>
-                    )}
-                    {workspace.run && (
-                      <button
-                        className="button secondary small-button"
-                        onClick={download}
-                        disabled={!!busy || workspace.run.stale}
-                      >
-                        <ArrowDownToLine size={16} />
-                        Excel
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {tab !== "activity" && (
-                  <div className="table-toolbar">
-                    <div className="filter-tabs">
-                      {tab === "matches" ? (
-                        [
-                          "ALL",
-                          "MATCHED",
-                          "PARTIAL",
-                          "REVIEW",
-                          "UNMATCHED",
-                          "DUPLICATE",
-                        ].map((value) => (
-                          <button
-                            key={value}
-                            className={filter === value ? "selected" : ""}
-                            onClick={() => setFilter(value)}
-                          >
-                            {value === "ALL" ? "Alle Fälle" : labels[value]}
-                          </button>
-                        ))
-                      ) : (
-                        <span className="toolbar-label">
-                          {tab === "invoices"
-                            ? "Alle Rechnungen"
-                            : "Alle Zahlungseingänge"}
-                        </span>
-                      )}
-                    </div>
-                    <label className="search">
-                      <Search size={16} />
-                      <input
-                        aria-label="Suchen"
-                        placeholder="Nummer oder Kunde suchen …"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                      />
-                    </label>
-                  </div>
+                          ? rows.length
+                          : workspace.jobs.length}
+                  </span>
+                </h2>
+                <p>
+                  {tab === "invoices"
+                    ? "Original ansehen, Angaben prüfen und freigeben."
+                    : tab === "matches"
+                      ? "Jede Zuordnung hat einen nachvollziehbaren Grund."
+                      : tab === "payments"
+                        ? "Zahlungsdaten bleiben unverändert. Zuordnungen werden separat protokolliert."
+                        : "Echte KI-Aufrufe und gespeicherte Beispiele sind klar gekennzeichnet."}
+                </p>
+              </div>
+              <div className="table-actions">
+                {workspace.invoices.length > 0 && (
+                  <button
+                    className="button primary small-button"
+                    onClick={match}
+                    disabled={!!busy}
+                  >
+                    <CheckCheck size={17} />
+                    Abgleich starten
+                  </button>
                 )}
-                <div className="table-scroll">
-                  {tab === "invoices" && (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>RECHNUNG</th>
-                          <th>KUNDE</th>
-                          <th>BETRAG</th>
-                          <th>DATENQUELLE</th>
-                          <th>STATUS</th>
-                          <th />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleInvoices.map((i) => (
-                          <tr
-                            key={i.id}
-                            onClick={() => openInvoice(i)}
-                            className="clickable"
-                          >
-                            <td>
-                              <div className="invoice-cell">
-                                <span className="file-icon">
-                                  <FileText size={19} />
-                                </span>
-                                <span>
-                                  <strong>
-                                    {i.payload.invoice_number || "Nummer fehlt"}
-                                  </strong>
-                                  {i.document_id && i.filename ? (
-                                    originalDownload(i.document_id, i.filename)
-                                  ) : (
-                                    <small>CSV-Import</small>
-                                  )}
-                                </span>
-                              </div>
-                            </td>
-                            <td>
-                              {i.payload.customer || "Noch nicht erkannt"}
-                            </td>
-                            <td className="amount">
-                              {i.payload.gross_amount
-                                ? money(
-                                    i.payload.gross_amount,
-                                    i.payload.currency || "EUR",
-                                  )
-                                : "—"}
-                            </td>
-                            <td>
-                              <span
-                                className={
-                                  "source " +
-                                  (i.source === "openai" ? "ai-source" : "")
-                                }
-                              >
-                                {i.source === "openai" ? (
-                                  <Sparkles size={13} />
-                                ) : (
-                                  <FileCheck2 size={13} />
-                                )}{" "}
-                                {i.source === "openai"
-                                  ? "OpenAI-Auswertung"
-                                  : i.source === "example"
-                                    ? "Beispielwerte"
-                                    : "CSV-Import"}
-                              </span>
-                            </td>
-                            <td>
-                              <span
-                                className={
-                                  "pill " + (i.confirmed ? "green" : "amber")
-                                }
-                              >
-                                {i.confirmed ? (
-                                  <Check size={13} />
-                                ) : (
-                                  <CircleAlert size={13} />
-                                )}{" "}
-                                {i.confirmed ? "Bestätigt" : "Angaben prüfen"}
-                              </span>
-                            </td>
-                            <td>
-                              <button
-                                className="row-action"
-                                aria-label={
-                                  "Rechnung " +
-                                  (i.payload.invoice_number || "öffnen")
-                                }
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openInvoice(i);
-                                }}
-                              >
-                                <ArrowUpRight size={18} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                        {missingDocs.map((d) => (
-                          <tr key={d.id}>
-                            <td colSpan={3}>
-                              <div className="invoice-cell">
-                                <span className="file-icon">
-                                  <FileText size={18} />
-                                </span>
-                                <span>
-                                  <strong>{d.filename}</strong>
-                                  <small>Bereit für die KI-Auswertung</small>
-                                  {originalDownload(d.id, d.filename)}
-                                </span>
-                              </div>
-                            </td>
-                            <td colSpan={3}>
-                              <button
-                                className="button secondary small-button"
-                                disabled={!!busy || !config.ai_available}
-                                onClick={() => extract(d.id)}
-                              >
-                                <Sparkles size={16} />
-                                Mit KI auslesen
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                {workspace.run && (
+                  <button
+                    className="button secondary small-button"
+                    onClick={download}
+                    disabled={!!busy || workspace.run.stale}
+                  >
+                    <ArrowDownToLine size={16} />
+                    Excel
+                  </button>
+                )}
+              </div>
+            </div>
+            {tab !== "activity" && (
+              <div className="table-toolbar">
+                <div className="filter-tabs">
+                  {tab === "matches" ? (
+                    [
+                      "ALL",
+                      "MATCHED",
+                      "PARTIAL",
+                      "REVIEW",
+                      "UNMATCHED",
+                      "DUPLICATE",
+                    ].map((value) => (
+                      <button
+                        key={value}
+                        className={filter === value ? "selected" : ""}
+                        onClick={() => setFilter(value)}
+                      >
+                        {value === "ALL" ? "Alle Fälle" : labels[value]}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="toolbar-label">
+                      {tab === "invoices"
+                        ? "Alle Rechnungen"
+                        : "Alle Zahlungseingänge"}
+                    </span>
                   )}
-                  {tab === "matches" && (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>RECHNUNG / ZAHLUNG</th>
-                          <th>KUNDE</th>
-                          <th>ERWARTET</th>
-                          <th>ERHALTEN</th>
-                          <th>STATUS</th>
-                          <th />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleMatches.map((r, n) => (
-                          <tr
-                            key={r.invoice_id || r.payment_ids.join(",") || n}
-                            className="clickable"
-                            onClick={() => {
+                </div>
+                <label className="search">
+                  <Search size={16} />
+                  <input
+                    aria-label="Suchen"
+                    placeholder="Nummer oder Kunde suchen …"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </label>
+              </div>
+            )}
+            <div className="table-scroll">
+              {tab === "invoices" && (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>RECHNUNG</th>
+                      <th>KUNDE</th>
+                      <th>BETRAG</th>
+                      <th>DATENQUELLE</th>
+                      <th>STATUS</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleInvoices.map((i) => (
+                      <tr
+                        key={i.id}
+                        onClick={() => openInvoice(i)}
+                        className="clickable"
+                      >
+                        <td>
+                          <div className="invoice-cell">
+                            <span className="file-icon">
+                              <FileText size={19} />
+                            </span>
+                            <span>
+                              <strong>
+                                {i.payload.invoice_number || "Nummer fehlt"}
+                              </strong>
+                              {i.document_id && i.filename ? (
+                                originalDownload(i.document_id, i.filename)
+                              ) : (
+                                <small>CSV-Import</small>
+                              )}
+                            </span>
+                          </div>
+                        </td>
+                        <td>{i.payload.customer || "Noch nicht erkannt"}</td>
+                        <td className="amount">
+                          {i.payload.gross_amount
+                            ? money(
+                                i.payload.gross_amount,
+                                i.payload.currency || "EUR",
+                              )
+                            : "—"}
+                        </td>
+                        <td>
+                          <span
+                            className={
+                              "source " +
+                              (i.source === "openai" ? "ai-source" : "")
+                            }
+                          >
+                            {i.source === "openai" ? (
+                              <Sparkles size={13} />
+                            ) : (
+                              <FileCheck2 size={13} />
+                            )}{" "}
+                            {i.source === "openai"
+                              ? "OpenAI-Auswertung"
+                              : i.source === "example"
+                                ? "Beispielwerte"
+                                : "CSV-Import"}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={
+                              "pill " + (i.confirmed ? "green" : "amber")
+                            }
+                          >
+                            {i.confirmed ? (
+                              <Check size={13} />
+                            ) : (
+                              <CircleAlert size={13} />
+                            )}{" "}
+                            {i.confirmed ? "Bestätigt" : "Angaben prüfen"}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="row-action"
+                            aria-label={
+                              "Rechnung " +
+                              (i.payload.invoice_number || "öffnen")
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openInvoice(i);
+                            }}
+                          >
+                            <ArrowUpRight size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {missingDocs.map((d) => (
+                      <tr key={d.id}>
+                        <td colSpan={3}>
+                          <div className="invoice-cell">
+                            <span className="file-icon">
+                              <FileText size={18} />
+                            </span>
+                            <span>
+                              <strong>{d.filename}</strong>
+                              <small>Bereit für die KI-Auswertung</small>
+                              {originalDownload(d.id, d.filename)}
+                            </span>
+                          </div>
+                        </td>
+                        <td colSpan={3}>
+                          <button
+                            className="button secondary small-button"
+                            disabled={!!busy || !config.ai_available}
+                            onClick={() => extract(d.id)}
+                          >
+                            <Sparkles size={16} />
+                            Mit KI auslesen
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {tab === "matches" && (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>RECHNUNG / ZAHLUNG</th>
+                      <th>KUNDE</th>
+                      <th>ERWARTET</th>
+                      <th>ERHALTEN</th>
+                      <th>STATUS</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleMatches.map((r, n) => (
+                      <tr
+                        key={r.invoice_id || r.payment_ids.join(",") || n}
+                        className="clickable"
+                        onClick={() => {
+                          setSelectedMatch(r);
+                          setSuggestion(null);
+                        }}
+                      >
+                        <td>
+                          <strong>
+                            {r.invoice_number || "Unzugeordnete Zahlung"}
+                          </strong>
+                          <small className="subline">{r.reason}</small>
+                        </td>
+                        <td>{r.customer}</td>
+                        <td className="amount">
+                          {r.invoice_id ? money(r.expected, r.currency) : "—"}
+                        </td>
+                        <td className="amount">
+                          {money(r.received, r.currency)}
+                        </td>
+                        <td>
+                          <span className={"pill status-" + r.status}>
+                            {labels[r.status]}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="row-action"
+                            aria-label="Abgleich ansehen"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setSelectedMatch(r);
                               setSuggestion(null);
                             }}
                           >
-                            <td>
-                              <strong>
-                                {r.invoice_number || "Unzugeordnete Zahlung"}
-                              </strong>
-                              <small className="subline">{r.reason}</small>
-                            </td>
-                            <td>{r.customer}</td>
-                            <td className="amount">
-                              {r.invoice_id
-                                ? money(r.expected, r.currency)
-                                : "—"}
-                            </td>
-                            <td className="amount">
-                              {money(r.received, r.currency)}
-                            </td>
-                            <td>
-                              <span className={"pill status-" + r.status}>
-                                {labels[r.status]}
-                              </span>
-                            </td>
-                            <td>
-                              <button
-                                className="row-action"
-                                aria-label="Abgleich ansehen"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedMatch(r);
-                                  setSuggestion(null);
-                                }}
-                              >
-                                <ChevronRight size={18} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                  {tab === "payments" && (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>ZAHLUNG</th>
-                          <th>ZAHLER</th>
-                          <th>VERWENDUNGSZWECK</th>
-                          <th>BETRAG</th>
-                          <th>DATUM</th>
+                            <ChevronRight size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {tab === "payments" && (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ZAHLUNG</th>
+                      <th>ZAHLER</th>
+                      <th>VERWENDUNGSZWECK</th>
+                      <th>BETRAG</th>
+                      <th>DATUM</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workspace.payments
+                      .filter((p) =>
+                        [p.reference, p.payer, p.external_id]
+                          .join(" ")
+                          .toLowerCase()
+                          .includes(query.toLowerCase()),
+                      )
+                      .map((p) => (
+                        <tr key={p.id}>
+                          <td>
+                            <strong>{p.external_id}</strong>
+                          </td>
+                          <td>{p.payer}</td>
+                          <td>{p.reference}</td>
+                          <td className="amount">
+                            {money(p.amount, p.currency)}
+                          </td>
+                          <td>
+                            {new Date(p.paid_at).toLocaleDateString("de-DE")}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {workspace.payments
-                          .filter((p) =>
-                            [p.reference, p.payer, p.external_id]
-                              .join(" ")
-                              .toLowerCase()
-                              .includes(query.toLowerCase()),
-                          )
-                          .map((p) => (
-                            <tr key={p.id}>
-                              <td>
-                                <strong>{p.external_id}</strong>
-                              </td>
-                              <td>{p.payer}</td>
-                              <td>{p.reference}</td>
-                              <td className="amount">
-                                {money(p.amount, p.currency)}
-                              </td>
-                              <td>
-                                {new Date(p.paid_at).toLocaleDateString(
-                                  "de-DE",
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  )}
-                  {tab === "activity" && (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>AUFTRAG</th>
-                          <th>STATUS</th>
-                          <th>ERGEBNIS</th>
-                          <th />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {workspace.jobs.map((j) => (
-                          <tr key={j.id}>
-                            <td>
-                              <strong>
-                                {{
-                                  extract: "KI-Rechnungsauswertung",
-                                  reconcile: "Zahlungsabgleich",
-                                  suggest: "KI-Zuordnungsvorschlag",
-                                }[j.kind] || j.kind}
-                              </strong>
-                            </td>
-                            <td>
-                              <span
-                                className={
-                                  "pill " +
-                                  (j.status === "succeeded" ? "green" : "amber")
-                                }
-                              >
-                                {
-                                  {
-                                    succeeded: "Abgeschlossen",
-                                    failed: "Fehlgeschlagen",
-                                    running: "In Verarbeitung",
-                                    pending: "In Warteschlange",
-                                  }[j.status]
-                                }
-                              </span>
-                            </td>
-                            <td>
-                              {j.error ||
-                                (j.status === "succeeded"
-                                  ? "Ergebnis gespeichert"
-                                  : "Verarbeitung läuft")}
-                            </td>
-                            <td>
-                              {j.status === "failed" ? (
-                                <button
-                                  className="button secondary small-button"
-                                  disabled={!!busy}
-                                  onClick={() =>
-                                    perform(
-                                      "Auftrag wird erneut gestartet …",
-                                      async () => {
-                                        await waitForJob(
-                                          await api<Job>(
-                                            "/jobs/" + j.id + "/retry",
-                                            { method: "POST" },
-                                          ),
-                                        );
-                                      },
-                                    )
-                                  }
-                                >
-                                  Erneut starten
-                                </button>
-                              ) : (
-                                j.status !== "succeeded" && (
-                                  <button
-                                    className="button secondary small-button"
-                                    disabled={!!busy}
-                                    onClick={() =>
-                                      perform(
-                                        "Status wird geprüft …",
-                                        async () => {
-                                          await waitForJob(j);
-                                        },
-                                      )
-                                    }
-                                  >
-                                    Status prüfen
-                                  </button>
+                      ))}
+                  </tbody>
+                </table>
+              )}
+              {tab === "activity" && (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>AUFTRAG</th>
+                      <th>STATUS</th>
+                      <th>ERGEBNIS</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workspace.jobs.map((j) => (
+                      <tr key={j.id}>
+                        <td>
+                          <strong>
+                            {{
+                              extract: "KI-Rechnungsauswertung",
+                              reconcile: "Zahlungsabgleich",
+                              suggest: "KI-Zuordnungsvorschlag",
+                            }[j.kind] || j.kind}
+                          </strong>
+                        </td>
+                        <td>
+                          <span
+                            className={
+                              "pill " +
+                              (j.status === "succeeded" ? "green" : "amber")
+                            }
+                          >
+                            {
+                              {
+                                succeeded: "Abgeschlossen",
+                                failed: "Fehlgeschlagen",
+                                running: "In Verarbeitung",
+                                pending: "In Warteschlange",
+                              }[j.status]
+                            }
+                          </span>
+                        </td>
+                        <td>
+                          {j.error ||
+                            (j.status === "succeeded"
+                              ? "Ergebnis gespeichert"
+                              : "Verarbeitung läuft")}
+                        </td>
+                        <td>
+                          {j.status === "failed" ? (
+                            <button
+                              className="button secondary small-button"
+                              disabled={!!busy}
+                              onClick={() =>
+                                perform(
+                                  "Auftrag wird erneut gestartet …",
+                                  async () => {
+                                    await waitForJob(
+                                      await api<Job>(
+                                        "/jobs/" + j.id + "/retry",
+                                        { method: "POST" },
+                                      ),
+                                    );
+                                  },
                                 )
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-                {((tab === "invoices" &&
-                  !workspace.invoices.length &&
-                  !missingDocs.length) ||
-                  (tab === "matches" && !rows.length) ||
-                  (tab === "payments" && !workspace.payments.length) ||
-                  (tab === "activity" && !workspace.jobs.length)) && (
-                  <div className="empty-state">
-                    <FolderOpen size={30} />
-                    <strong>
-                      {tab === "matches"
-                        ? "Bereit für deinen ersten Abgleich"
-                        : "Hier ist Platz für deine Daten"}
-                    </strong>
-                    <p>
-                      {tab === "matches"
-                        ? "Lade Rechnungen und Zahlungen und starte den Abgleich."
-                        : "Starte mit den Beispieldaten oder importiere eine Datei."}
-                    </p>
-                  </div>
-                )}
-                <div className="table-footer">
-                  <span>
-                    <ShieldCheck size={14} />
-                    Deine Entscheidungen bleiben nachvollziehbar.
-                  </span>
-                  {active && (
-                    <button
-                      disabled={!!busy}
-                      onClick={() =>
-                        perform("Sitzung wird zurückgesetzt …", async () => {
-                          await api("/demo-sessions/current", {
-                            method: "DELETE",
-                          });
-                          csrf.current = "";
-                          sessionStorage.removeItem("rf_csrf");
-                          setWorkspace(empty);
-                          setActive(false);
-                          setSelected(null);
-                          setSelectedMatch(null);
-                        })
-                      }
-                    >
-                      <RefreshCw size={13} />
-                      Sitzung zurücksetzen
-                    </button>
-                  )}
-                </div>
-              </section>
-              <section className="how-it-works">
-                <div>
-                  <span>01</span>
-                  <div>
-                    <strong>Rechnung hinzufügen</strong>
-                    <p>PDF oder Foto. Die KI erkennt die Angaben.</p>
-                  </div>
-                </div>
-                <ArrowRight size={16} />
-                <div>
-                  <span>02</span>
-                  <div>
-                    <strong>Angaben bestätigen</strong>
-                    <p>Du prüfst das Ergebnis am Original.</p>
-                  </div>
-                </div>
-                <ArrowRight size={16} />
-                <div>
-                  <span>03</span>
-                  <div>
-                    <strong>Zahlungen abgleichen</strong>
-                    <p>Klare Regeln. Verständliche Ergebnisse.</p>
-                  </div>
-                </div>
-              </section>
-              <footer className="page-footer">
-                <span>
-                  ReconFlow <span className="muted">/</span> Entwickelt von
-                  wasiliy-strecker
-                </span>
-                <span>
-                  <span className="live-dot" />
-                  {config.mode === "demo"
-                    ? "Öffentliche Demo"
-                    : "Lokale Entwicklungsumgebung"}
-                </span>
-              </footer>
-            </>
-          )}
+                              }
+                            >
+                              Erneut starten
+                            </button>
+                          ) : (
+                            j.status !== "succeeded" && (
+                              <button
+                                className="button secondary small-button"
+                                disabled={!!busy}
+                                onClick={() =>
+                                  perform("Status wird geprüft …", async () => {
+                                    await waitForJob(j);
+                                  })
+                                }
+                              >
+                                Status prüfen
+                              </button>
+                            )
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            {((tab === "invoices" &&
+              !workspace.invoices.length &&
+              !missingDocs.length) ||
+              (tab === "matches" && !rows.length) ||
+              (tab === "payments" && !workspace.payments.length) ||
+              (tab === "activity" && !workspace.jobs.length)) && (
+              <div className="empty-state">
+                <FolderOpen size={30} />
+                <strong>
+                  {tab === "matches"
+                    ? "Bereit für deinen ersten Abgleich"
+                    : "Hier ist Platz für deine Daten"}
+                </strong>
+                <p>
+                  {tab === "matches"
+                    ? "Lade Rechnungen und Zahlungen und starte den Abgleich."
+                    : "Starte mit den Beispieldaten oder importiere eine Datei."}
+                </p>
+              </div>
+            )}
+            <div className="table-footer">
+              <span>
+                <ShieldCheck size={14} />
+                Deine Entscheidungen bleiben nachvollziehbar.
+              </span>
+              {active && (
+                <button
+                  disabled={!!busy}
+                  onClick={() =>
+                    perform("Sitzung wird zurückgesetzt …", async () => {
+                      await api("/demo-sessions/current", {
+                        method: "DELETE",
+                      });
+                      csrf.current = "";
+                      sessionStorage.removeItem("rf_csrf");
+                      setWorkspace(empty);
+                      setActive(false);
+                      setSelected(null);
+                      setSelectedMatch(null);
+                    })
+                  }
+                >
+                  <RefreshCw size={13} />
+                  Sitzung zurücksetzen
+                </button>
+              )}
+            </div>
+          </section>
+          <section className="how-it-works">
+            <div>
+              <span>01</span>
+              <div>
+                <strong>Rechnung hinzufügen</strong>
+                <p>PDF oder Foto. Die KI erkennt die Angaben.</p>
+              </div>
+            </div>
+            <ArrowRight size={16} />
+            <div>
+              <span>02</span>
+              <div>
+                <strong>Angaben bestätigen</strong>
+                <p>Du prüfst das Ergebnis am Original.</p>
+              </div>
+            </div>
+            <ArrowRight size={16} />
+            <div>
+              <span>03</span>
+              <div>
+                <strong>Zahlungen abgleichen</strong>
+                <p>Klare Regeln. Verständliche Ergebnisse.</p>
+              </div>
+            </div>
+          </section>
+          <footer className="page-footer">
+            <span>
+              ReconFlow <span className="muted">/</span> Entwickelt von
+              wasiliy-strecker
+            </span>
+            <span>
+              <span className="live-dot" />
+              {config.mode === "demo"
+                ? "Öffentliche Demo"
+                : "Lokale Entwicklungsumgebung"}
+            </span>
+          </footer>
         </main>
       </div>
       {showImport && (
