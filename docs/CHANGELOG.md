@@ -283,3 +283,17 @@
   uses the public username and noreply email. Original private history backups and
   runtime configuration remain ignored and local. No AWS resources, live deployment,
   paid AI requests or GPU rentals were changed by publication or CI.
+
+## 2026-11-24 07:56 CET — Invoice readability and original downloads
+
+- Increased text contrast across the invoice workspace and review dialog. Enlarged
+  table headings, invoice data and supporting labels on desktop and mobile.
+- Added an original-file download under the invoice number, also available for
+  documents awaiting extraction. The download reads the session's stored document,
+  keeps its filename and leaves the list open. The row still opens the comparison view.
+- Verified the rebuilt local frontend with Chromium. PDF, PNG and JPEG downloads
+  matched the fixture bytes and filenames. The review, reconciliation and Excel export
+  flow passed. At widths of 390 and 1440 pixels the download was in view and the
+  sampled workspace text had a minimum measured contrast of 5.09:1.
+- TypeScript, the production build, Ruff and the document session-isolation integration
+  test passed. Recorded the owner's preference to commit each completed task.

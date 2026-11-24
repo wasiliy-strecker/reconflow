@@ -13,6 +13,28 @@ test("invoice review, reconciliation, import, manual decision and export", async
   await page.getByRole("button", { name: "Demo starten", exact: true }).click();
   await expect(page.locator("tbody tr")).toHaveCount(6, { timeout: 60_000 });
   try {
+    for (const [index, filename] of [
+      [0, "RE-2026-1001.pdf"],
+      [1, "RE-2026-1002.png"],
+      [4, "RE-2026-1005.jpg"],
+    ] as const) {
+      const original = page.getByRole("button", {
+        name: "Original herunterladen: " + filename,
+        exact: true,
+      });
+      const pendingDownload = page.waitForEvent("download");
+      await original.click();
+      const downloaded = await pendingDownload;
+      expect(downloaded.suggestedFilename()).toBe(filename);
+      const fixture = await page.request.get("/api/examples/" + index);
+      expect(fixture.ok()).toBe(true);
+      expect(
+        (await readFile((await downloaded.path())!)).equals(
+          await fixture.body(),
+        ),
+      ).toBe(true);
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+    }
     await page
       .getByRole("button", { name: "Rechnung RE-2026-1001", exact: true })
       .click();
@@ -68,13 +90,11 @@ test("invoice review, reconciliation, import, manual decision and export", async
       .getByRole("button", { name: "CSV importieren", exact: true })
       .click();
     const fixture = await page.request.get("/api/examples-payments");
-    await page
-      .locator("input[type=file]")
-      .setInputFiles({
-        name: "payments.csv",
-        mimeType: "text/csv",
-        buffer: await fixture.body(),
-      });
+    await page.locator("input[type=file]").setInputFiles({
+      name: "payments.csv",
+      mimeType: "text/csv",
+      buffer: await fixture.body(),
+    });
     await expect(
       page.getByText(
         "0 Einträge importiert. 6 bereits vorhandene Einträge übersprungen.",

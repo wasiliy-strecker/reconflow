@@ -136,6 +136,22 @@ const money = (value: string | number | null, currency = "EUR") =>
   );
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+async function saveFile(path: string, filename: string) {
+  const response = await fetch(path);
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(
+      body?.detail || "Die Datei konnte nicht heruntergeladen werden.",
+    );
+  }
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export default function App() {
   const [config, setConfig] = useState<Config>({
     mode: "local",
@@ -419,20 +435,30 @@ export default function App() {
   async function download() {
     if (!workspace.run) return;
     await perform("Bericht wird erstellt …", async () => {
-      const response = await fetch(
+      await saveFile(
         "/api/reports/" + workspace.run!.id + ".xlsx",
+        "ReconFlow-Abgleich.xlsx",
       );
-      if (!response.ok) {
-        const body = await response.json();
-        throw new Error(body.detail);
-      }
-      const url = URL.createObjectURL(await response.blob());
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "ReconFlow-Abgleich.xlsx";
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
+  }
+
+  function originalDownload(documentId: string, filename: string) {
+    return (
+      <button
+        className="original-download"
+        disabled={!!busy}
+        aria-label={"Original herunterladen: " + filename}
+        onClick={(event) => {
+          event.stopPropagation();
+          void perform("Original wird heruntergeladen …", () =>
+            saveFile("/api/documents/" + documentId + "/file", filename),
+          );
+        }}
+      >
+        <ArrowDownToLine size={14} aria-hidden="true" />
+        Original herunterladen
+      </button>
+    );
   }
 
   const rows = workspace.run?.stale ? [] : workspace.run?.payload.results || [];
@@ -895,7 +921,11 @@ export default function App() {
                                   <strong>
                                     {i.payload.invoice_number || "Nummer fehlt"}
                                   </strong>
-                                  <small>{i.filename || "CSV-Import"}</small>
+                                  {i.document_id && i.filename ? (
+                                    originalDownload(i.document_id, i.filename)
+                                  ) : (
+                                    <small>CSV-Import</small>
+                                  )}
                                 </span>
                               </div>
                             </td>
@@ -970,6 +1000,7 @@ export default function App() {
                                 <span>
                                   <strong>{d.filename}</strong>
                                   <small>Bereit für die KI-Auswertung</small>
+                                  {originalDownload(d.id, d.filename)}
                                 </span>
                               </div>
                             </td>
