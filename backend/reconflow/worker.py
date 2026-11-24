@@ -129,21 +129,12 @@ def handler(event, context):
     failures = []
     for record in event.get("Records", []):
         try:
-            dispatch(json.loads(record["body"]))
+            process(json.loads(record["body"])["job_id"])
         except Exception:
             # Infrastructure errors before/after the durable claim can be redelivered.
             # A claimed/running job is never sent to OpenAI a second time.
             failures.append({"itemIdentifier": record["messageId"]})
     return {"batchItemFailures": failures}
-
-
-def dispatch(message):
-    if "benchmark_lease_id" in message:
-        from reconflow.benchmarks.lifecycle import process as process_benchmark
-
-        process_benchmark(message["benchmark_lease_id"])
-    else:
-        process(message["job_id"])
 
 
 def main():
@@ -155,7 +146,7 @@ def main():
                 QueueUrl=settings().sqs_queue_url, WaitTimeSeconds=10, MaxNumberOfMessages=1
             )
             for item in response.get("Messages", []):
-                dispatch(json.loads(item["Body"]))
+                process(json.loads(item["Body"])["job_id"])
                 queue.delete_message(
                     QueueUrl=settings().sqs_queue_url, ReceiptHandle=item["ReceiptHandle"]
                 )

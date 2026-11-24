@@ -283,3 +283,9 @@
   uses the public username and noreply email. Original private history backups and
   runtime configuration remain ignored and local. No AWS resources, live deployment,
   paid AI requests or GPU rentals were changed by publication or CI.
+
+## 2026-11-24 08:26 CET — Independent GPU Compare application
+
+- Moved this checkout and its linked release worktree into the Python portfolio directory. Preserved existing Compose project and volume names.
+- Extracted benchmarking into its own repository. Removed the GPU dashboard, API integration, worker dispatch, provider dependency and GPU infrastructure from the invoice application. Kept the checksum-protected historical SQL migration for existing databases.
+- Verified 55 Python tests, Ruff, TypeScript, the production frontend build, application Terraform tests and the invoice browser flow including original downloads and Excel export.

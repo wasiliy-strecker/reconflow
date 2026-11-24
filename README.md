@@ -78,17 +78,12 @@ demselben Container-Image mit unterschiedlichen Einstiegspunkten.
 Details: [Architektur](docs/ARCHITECTURE.md), [Dateiformate](docs/DATA_FORMATS.md),
 [AWS-Betrieb](docs/AWS_RUNBOOK.md), [Kostenannahmen](docs/COSTS.md).
 
-Der Quellcode enthält zusätzlich einen Bereich **GPU Benchmarks** mit Vast.ai-Anbindung,
-Ollama-Runner und unabhängiger Aufräumlogik. Kostenpflichtige GPU-Ausführung ist standardmäßig
-deaktiviert. Dieser neue Bereich wurde noch nicht in die verlinkte AWS-Demo ausgerollt;
-echte Hardware-Messungen stehen aus. Siehe [GPU-Setup und Prüfgrenzen](docs/GPU_BENCHMARKS.md).
+Das eigenständige Portfolio-Projekt [GPU Compare](https://github.com/wasiliy-strecker/gpu-compare) vergleicht lokale Modelle auf gemieteten GPUs.
 
 ## Nachgewiesener Stand
 
-- 73 Python-Tests mit lokalen PostgreSQL-/S3-Adaptern, simulierten KI-Antworten,
-  AWS-Vorbereitung und GPU-Lebenszyklus.
-- Acht Terraform-Tests mit simuliertem AWS-Provider prüfen Stockholm, Free-Plan-Vorgaben,
-  optionales OIDC und die deaktivierte GPU-Vermietung.
+- Python-Tests prüfen den Rechnungsablauf, die Datenisolation und die AWS-Vorbereitung.
+- Terraform-Tests prüfen Stockholm, Free-Plan-Vorgaben und optionales OIDC.
 - Ein Browser-Test deckt Import, Prüfung, Abgleich, manuelle Zuordnung und XLSX-Download ab.
   Lokal zusätzlich mit echten OpenAI-Aufrufen für Extraktion und Zuordnung ausgeführt.
 - Echte KI-Smoke-Evaluation: **27/27 Kopffelder** bei drei synthetischen PDF-/PNG-/JPEG-Rechnungen.

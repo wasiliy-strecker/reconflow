@@ -40,9 +40,6 @@ def create_session():
             raise ValueError(
                 "Die Demo ist gerade stark ausgelastet. Bitte später erneut versuchen."
             )
-        from reconflow.benchmarks.service import scrub_sessions
-
-        scrub_sessions(db)
         db.execute("DELETE FROM sessions WHERE expires_at<now()")
         db.execute("INSERT INTO sessions(id) VALUES (:id)", {"id": session})
     return session
