@@ -297,3 +297,12 @@
   sampled workspace text had a minimum measured contrast of 5.09:1.
 - TypeScript, the production build, Ruff and the document session-isolation integration
   test passed. Recorded the owner's preference to commit each completed task.
+
+## 2026-11-24 08:12 CET — Standing demo release instruction
+
+- The owner authorized publishing each validated demo change to the existing AWS
+  environment after commit. Recorded the target and verification step in the project rules.
+- Prepared frontend release `84920a1` from the AWS-compatible base `71b6540` and
+  the invoice change `9e3adad`. Its production build matched the locally tested
+  release files byte for byte. The browser test covered PDF, PNG and JPEG downloads,
+  invoice review, reconciliation, Excel export and mobile layout.

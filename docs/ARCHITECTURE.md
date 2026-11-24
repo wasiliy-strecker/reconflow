@@ -134,6 +134,12 @@ history is retained in an ignored private backup; its commit IDs differ after cl
 Gitleaks scans the complete history in CI. The source publication does not redeploy AWS
 or enable paid GPU execution; those remain separate actions.
 
+On 2026-11-24 the owner authorized ongoing publication of validated demo changes to
+the existing AWS environment after commit. Verify each release on the public URL.
+For a frontend-only release, upload the versioned assets and switch the entry page.
+If other repository features are ahead of the deployed backend, base the release on
+the compatible demo revision and record its exact commit.
+
 ## GPU benchmarks
 
 The GPU benchmark extension shares the existing FastAPI, React, SQS, Aurora/Data API,

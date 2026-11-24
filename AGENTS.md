@@ -6,8 +6,11 @@ Never commit credentials, real invoices, private customer data or Terraform stat
 Public demo mode accepts only the bundled synthetic fixtures and isolates each expiring session.
 OpenAI calls require budget reservation. Never automatically repeat an ambiguous paid request.
 Run focused unit/integration tests, Ruff, TypeScript and the frontend build for affected changes.
-Commit each completed, validated task and each completed milestone. Do not push, publish or provision paid AWS resources
-without the user's instruction for that action. Record completed work and verification in
+Commit each completed, validated task and each completed milestone. The owner's standing
+instruction is to publish validated demo changes to the existing ReconFlow AWS demo after
+commit and verify them at its public URL. Release only the intended changes when other
+features in the repository are ahead of the demo. GitHub pushes and provisioning paid
+resources require an instruction for that action. Record completed work and verification in
 docs/CHANGELOG.md with Europe/Berlin timestamps. Keep durable decisions in docs/ARCHITECTURE.md.
 
 ## Local AWS setup
@@ -19,7 +22,7 @@ docs/CHANGELOG.md with Europe/Berlin timestamps. Keep durable decisions in docs/
 - Work from the ReconFlow repository root. Do not append AWS rules to Contest Gallery repositories.
 - Terraform/workflow defaults target Stockholm. The Free Plan uses a separately prepared Aurora
   Express cluster; GitHub OIDC is disabled by default. Recheck plan/credits and IAM restrictions
-  before a separately authorized deployment. Do not upgrade to Paid or Advanced automatically.
+  before deployment. Do not upgrade to Paid or Advanced automatically.
 - Until AWS MCP tools are loaded in the active session, use the authenticated AWS CLI and official
   AWS documentation for setup verification. Do not claim unavailable MCP tools were called.
 
