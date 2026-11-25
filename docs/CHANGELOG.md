@@ -373,3 +373,14 @@
 - Both local browser tests passed, including leaving the payment open and then
   assigning it. Verified the dialog and actions at 320 and 390 pixels. TypeScript,
   the production build, Ruff and 29 focused Python tests passed.
+
+## 2026-11-25 18:04 CET — Public payment review verified
+
+- Published frontend commit `f1fe94c` to the existing AWS demo. Its public
+  entry page, JavaScript and CSS matched the tested build.
+- Both Chromium scenarios passed on the public URL and the local container.
+  Verified that leaving the Mira Kunsthandel payment open preserves the case,
+  then assigning it to RE-2026-1005 yields three matched invoices.
+- The first live check timed out while the reconciliation job was still running.
+  The browser test now gives asynchronous results up to 60 seconds to arrive.
+  The verification used synthetic data in its own session and made no AI requests.

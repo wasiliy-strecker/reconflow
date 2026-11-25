@@ -135,7 +135,9 @@ test("invoice review, reconciliation, import, manual decision and export", async
         page.getByText("Bereit für deinen ersten Abgleich"),
       ).toBeHidden();
     });
-    await expect(page.locator("tbody .status-MATCHED")).toHaveCount(2);
+    await expect(page.locator("tbody .status-MATCHED")).toHaveCount(2, {
+      timeout: 60_000,
+    });
     await expect(page.locator("tbody .status-PARTIAL")).toHaveCount(1);
     await expect(page.locator("tbody .status-DUPLICATE")).toHaveCount(1);
     // A failed rerun keeps the previous completed results available.
@@ -202,7 +204,9 @@ test("invoice review, reconciliation, import, manual decision and export", async
     await choice
       .getByRole("button", { name: "Zahlung dieser Rechnung zuordnen" })
       .click();
-    await expect(page.locator("tbody .status-MATCHED")).toHaveCount(3);
+    await expect(page.locator("tbody .status-MATCHED")).toHaveCount(3, {
+      timeout: 60_000,
+    });
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Excel", exact: true }).click();
     const file = await download;
