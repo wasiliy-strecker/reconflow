@@ -1376,22 +1376,94 @@ td.amount {
   font-size: 12px;
   margin: 23px 0 12px;
 }
-.candidate {
+.match-modal .payment-question {
+  padding-right: 34px;
+  margin: 0 0 20px;
+  font-size: 24px;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.payment-receipt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px 20px;
+  padding: 16px 18px;
+  margin: 0;
+  background: #f1f7f3;
+  border: 1px solid #dce9df;
+  border-radius: 9px;
+}
+.payment-receipt dt,
+.choice-summary span {
+  font-size: 13px;
+  color: var(--muted);
+}
+.payment-receipt dd {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.payment-receipt .receipt-amount,
+.choice-amount strong {
+  color: var(--deep);
+  font:
+    700 19px Manrope,
+    sans-serif;
+}
+.receipt-purpose {
+  grid-column: 1 / -1;
+  border-top: 1px solid #dce9df;
+  padding-top: 10px;
+}
+.receipt-purpose dd {
+  font-size: 14px;
+  font-weight: 400;
+}
+.match-modal .payment-reason,
+.match-modal .choice-help,
+.no-candidate {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 10px 0;
+}
+.match-modal .choices-heading {
+  font-size: 16px;
+  margin: 22px 0 4px;
+}
+.invoice-choice {
+  padding: 16px;
+  border: 1px solid #cadbd1;
+  border-radius: 9px;
+  margin: 10px 0;
+}
+.choice-summary,
+.payment-options {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 13px 0;
-  border-top: 1px solid #e8efe9;
+  flex-wrap: wrap;
+  gap: 12px;
 }
-.candidate strong {
-  font-size: 11px;
-  color: #5a7964;
+.choice-summary h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
 }
-.candidate small {
+.choice-summary {
+  overflow-wrap: anywhere;
+}
+.choice-amount strong {
   display: block;
-  color: var(--muted);
-  font-size: 10px;
-  margin-top: 5px;
+  margin-top: 4px;
+}
+.invoice-choice .button {
+  width: 100%;
+  margin-top: 15px;
+  white-space: normal;
+}
+.payment-options {
+  margin-top: 16px;
 }
 .ai-explanation {
   border-left: 3px solid #77af89;

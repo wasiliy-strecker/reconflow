@@ -361,3 +361,15 @@
 - Additional local mobile checks confirmed the KI progress status with a simulated
   provider response, reduced motion and navigation away during reconciliation. The
   completed job preserved the visitor's selected view.
+
+## 2026-11-25 18:02 CET — Explain unassigned payments
+
+- The payment review now shows the payer, incoming amount and bank reference
+  alongside possible invoices. It explains why a payment needs a decision and
+  why an amount-based candidate appears. Only actual invoice amounts are shown.
+- Visitors can assign the payment to a named invoice or leave it open. The
+  optional AI suggestion is secondary. Successful assignment identifies the
+  payment amount and invoice number.
+- Both local browser tests passed, including leaving the payment open and then
+  assigning it. Verified the dialog and actions at 320 and 390 pixels. TypeScript,
+  the production build, Ruff and 29 focused Python tests passed.

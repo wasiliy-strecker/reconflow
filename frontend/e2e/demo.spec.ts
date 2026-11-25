@@ -167,15 +167,41 @@ test("invoice review, reconciliation, import, manual decision and export", async
       .filter({ hasText: "Unzugeordnete Zahlung" })
       .getByRole("button")
       .click();
+    const assignment = page.getByRole("dialog", {
+      name: "Zu welcher Rechnung gehört diese Zahlung?",
+    });
+    await expect(
+      assignment.getByText("Vielen Dank fuer das Projekt"),
+    ).toBeVisible();
+    await expect(assignment.getByText("Eingegangener Betrag")).toBeVisible();
+    await expect(
+      assignment.getByText(/Betrag und Währung passen/),
+    ).toBeVisible();
+    await expect(
+      assignment.getByText("Rechnungsbetrag", { exact: true }),
+    ).toBeVisible();
+    await expect(assignment.getByText("Erwartet", { exact: true })).toHaveCount(
+      0,
+    );
+    await expect(assignment.getByText("NO_REFERENCE")).toHaveCount(0);
+    await assignment.getByRole("button", { name: "Offen lassen" }).click();
+    const unmatched = page
+      .getByRole("row")
+      .filter({ hasText: "Unzugeordnete Zahlung" });
+    await expect(unmatched).toBeVisible();
+    await unmatched.getByRole("button").click();
     if (process.env.RECONFLOW_LIVE_AI === "1") {
-      await page
-        .getByRole("button", { name: "KI um einen Zuordnungsvorschlag bitten" })
-        .click();
+      await page.getByRole("button", { name: "KI-Vorschlag einholen" }).click();
       await expect(page.getByText("KI-Vorschlag", { exact: true })).toBeVisible(
         { timeout: 90_000 },
       );
     }
-    await page.getByRole("button", { name: "Zuordnen", exact: true }).click();
+    const choice = assignment.getByRole("article", { name: "RE-2026-1005" });
+    await expect(choice).toContainText("Mira Kunsthandel");
+    await expect(choice).toContainText("833,00");
+    await choice
+      .getByRole("button", { name: "Zahlung dieser Rechnung zuordnen" })
+      .click();
     await expect(page.locator("tbody .status-MATCHED")).toHaveCount(3);
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Excel", exact: true }).click();

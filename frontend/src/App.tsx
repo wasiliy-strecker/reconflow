@@ -208,6 +208,152 @@ function TableSkeleton() {
   );
 }
 
+function PaymentReview({
+  match,
+  payment,
+  invoices,
+  busy,
+  aiAvailable,
+  suggestion,
+  onAssign,
+  onSuggest,
+  onClose,
+}: {
+  match: Match;
+  payment?: Payment;
+  invoices: Invoice[];
+  busy: boolean;
+  aiAvailable: boolean;
+  suggestion: Job["payload"] | null;
+  onAssign: (id: string) => void;
+  onSuggest: () => void;
+  onClose: () => void;
+}) {
+  const candidates = invoices.filter((i) => match.candidates.includes(i.id));
+  const canAssign = (i: Invoice) =>
+    i.confirmed && i.payload.currency === match.currency;
+  const hasChoice = candidates.some(canAssign);
+  const reason =
+    {
+      NO_REFERENCE:
+        "Im Verwendungszweck lässt sich keine eindeutige Rechnungsnummer erkennen.",
+      AMBIGUOUS_REFERENCE: "Der Verwendungszweck passt zu mehreren Rechnungen.",
+      CURRENCY_MISMATCH:
+        "Die Zahlung und die genannte Rechnung haben unterschiedliche Währungen.",
+    }[match.reason_code] ?? match.reason;
+
+  return (
+    <>
+      <h2 id="match-title" className="payment-question">
+        Zu welcher Rechnung gehört diese Zahlung?
+      </h2>
+      <dl className="payment-receipt">
+        <div>
+          <dt>Zahlung von</dt>
+          <dd>{payment?.payer || match.customer || "Unbekannt"}</dd>
+        </div>
+        <div>
+          <dt>Eingegangener Betrag</dt>
+          <dd className="receipt-amount">
+            {money(match.received, match.currency)}
+          </dd>
+        </div>
+        <div className="receipt-purpose">
+          <dt>Verwendungszweck</dt>
+          <dd>{payment?.reference || "Nicht angegeben"}</dd>
+        </div>
+      </dl>
+      <p className="payment-reason">{reason}</p>
+      {candidates.length > 0 ? (
+        <>
+          <h3 className="choices-heading">
+            {candidates.length === 1
+              ? "Mögliche Rechnung"
+              : "Mögliche Rechnungen"}
+          </h3>
+          {hasChoice && (
+            <p className="choice-help">
+              {match.reason_code === "NO_REFERENCE"
+                ? "Betrag und Währung passen. Prüfe den Kundennamen, bevor du die Zahlung zuordnest."
+                : "Vergleiche den Kunden und den Betrag, bevor du die Zahlung zuordnest."}
+            </p>
+          )}
+          {candidates.map((i) => (
+            <article
+              className="invoice-choice"
+              key={i.id}
+              aria-labelledby={"choice-" + i.id}
+            >
+              <div className="choice-summary">
+                <div>
+                  <h4 id={"choice-" + i.id}>
+                    {i.payload.invoice_number || "Rechnung ohne Nummer"}
+                  </h4>
+                  <span>{i.payload.customer || "Kunde unbekannt"}</span>
+                </div>
+                <div className="choice-amount">
+                  <span>Rechnungsbetrag</span>
+                  <strong>
+                    {i.payload.gross_amount && i.payload.currency
+                      ? money(i.payload.gross_amount, i.payload.currency)
+                      : "—"}
+                  </strong>
+                </div>
+              </div>
+              {canAssign(i) ? (
+                <button
+                  className="button primary"
+                  disabled={busy}
+                  aria-describedby={"choice-" + i.id}
+                  onClick={() => onAssign(i.id)}
+                >
+                  <Check size={16} aria-hidden="true" /> Zahlung dieser Rechnung
+                  zuordnen
+                </button>
+              ) : (
+                <p className="choice-help">
+                  {i.confirmed
+                    ? "Eine Zuordnung ist nur bei gleicher Währung möglich."
+                    : "Bestätige zuerst die Rechnungsangaben."}
+                </p>
+              )}
+            </article>
+          ))}
+        </>
+      ) : (
+        <p className="no-candidate">
+          Keine passende Rechnung gefunden. Die Zahlung bleibt offen.
+        </p>
+      )}
+      {suggestion && (
+        <div className="ai-explanation">
+          <strong>
+            <Sparkles size={16} />
+            KI-Vorschlag
+          </strong>
+          <p>{suggestion.reason}</p>
+          <small>Du entscheidest, ob du die Zahlung zuordnest.</small>
+        </div>
+      )}
+      <div className="payment-options">
+        <button className="button secondary" disabled={busy} onClick={onClose}>
+          Offen lassen
+        </button>
+        {hasChoice && aiAvailable && (
+          <button
+            className="button ai-button"
+            disabled={busy}
+            onClick={onSuggest}
+          >
+            <Sparkles size={15} />
+            KI-Vorschlag einholen
+          </button>
+        )}
+      </div>
+    </>
+  );
+}
+
 function OriginalPreview({ id, mime }: { id: string; mime: string | null }) {
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
   const src = "/api/documents/" + id + "/file";
@@ -563,7 +709,7 @@ export default function App() {
       setSelectedMatch(null);
       setSuggestion(null);
       setNotice(
-        "Deine Zuordnung wurde protokolliert und der Abgleich aktualisiert.",
+        `Die Zahlung über ${money(selectedMatch.received, selectedMatch.currency)} wurde der Rechnung ${invoice.payload.invoice_number || "ohne Nummer"} zugeordnet.`,
       );
     });
   }
@@ -1748,88 +1894,57 @@ export default function App() {
             >
               <X />
             </button>
-            <span className={"pill status-" + selectedMatch.status}>
-              {labels[selectedMatch.status]}
-            </span>
-            <h2 id="match-title">
-              {selectedMatch.invoice_number || "Zahlung prüfen"}
-            </h2>
-            <p>{selectedMatch.customer}</p>
-            <div className="match-numbers">
-              <div>
-                Erwartet
-                <strong>
-                  {money(selectedMatch.expected, selectedMatch.currency)}
-                </strong>
-              </div>
-              <div>
-                Eingegangen
-                <strong>
-                  {money(selectedMatch.received, selectedMatch.currency)}
-                </strong>
-              </div>
-            </div>
-            <div className="reason-box">
-              <ShieldCheck size={21} />
-              <div>
-                <strong>Warum dieser Status?</strong>
-                <p>{selectedMatch.reason}</p>
-                <code>{selectedMatch.reason_code}</code>
-              </div>
-            </div>
-            {!selectedMatch.invoice_id &&
-              selectedMatch.candidates.length > 0 && (
-                <>
-                  <button
-                    className="button ai-button full"
-                    onClick={() => requestSuggestion(selectedMatch)}
-                    disabled={!!busy || !config.ai_available}
-                  >
-                    <Sparkles size={17} />
-                    KI um einen Zuordnungsvorschlag bitten
-                  </button>
-                  {suggestion && (
-                    <div className="ai-explanation">
-                      <strong>
-                        <Sparkles size={16} />
-                        KI-Vorschlag
-                      </strong>
-                      <p>{suggestion.reason}</p>
-                      <small>
-                        Der Vorschlag wird erst nach deiner Bestätigung
-                        übernommen.
-                      </small>
-                    </div>
-                  )}
-                  <h3>Mögliche Rechnungen</h3>
-                  {selectedMatch.candidates.map((id) => {
-                    const i = workspace.invoices.find((i) => i.id === id);
-                    return (
-                      i && (
-                        <div className="candidate" key={id}>
-                          <div>
-                            <strong>{i.payload.invoice_number}</strong>
-                            <small>
-                              {i.payload.customer} ·{" "}
-                              {money(
-                                i.payload.gross_amount,
-                                i.payload.currency || "EUR",
-                              )}
-                            </small>
-                          </div>
-                          <button
-                            className="button secondary small-button"
-                            disabled={!!busy}
-                            onClick={() => applyDecision(id)}
-                          >
-                            Zuordnen
-                          </button>
-                        </div>
-                      )
-                    );
-                  })}
-                </>
-              )}
+            {selectedMatch.invoice_id ? (
+              <>
+                <span className={"pill status-" + selectedMatch.status}>
+                  {labels[selectedMatch.status]}
+                </span>
+                <h2 id="match-title">
+                  {selectedMatch.invoice_number || "Rechnung prüfen"}
+                </h2>
+                <p>{selectedMatch.customer}</p>
+                <div className="match-numbers">
+                  <div>
+                    Erwartet
+                    <strong>
+                      {money(selectedMatch.expected, selectedMatch.currency)}
+                    </strong>
+                  </div>
+                  <div>
+                    Eingegangen
+                    <strong>
+                      {money(selectedMatch.received, selectedMatch.currency)}
+                    </strong>
+                  </div>
+                </div>
+                <div className="reason-box">
+                  <ShieldCheck size={21} />
+                  <div>
+                    <strong>Warum dieser Status?</strong>
+                    <p>{selectedMatch.reason}</p>
+                    <code>{selectedMatch.reason_code}</code>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <PaymentReview
+                match={selectedMatch}
+                payment={workspace.payments.find(
+                  (p) => p.id === selectedMatch.payment_ids[0],
+                )}
+                invoices={workspace.invoices}
+                busy={!!busy}
+                aiAvailable={config.ai_available}
+                suggestion={
+                  suggestion?.payment_id === selectedMatch.payment_ids[0]
+                    ? suggestion
+                    : null
+                }
+                onAssign={applyDecision}
+                onSuggest={() => requestSuggestion(selectedMatch)}
+                onClose={() => setSelectedMatch(null)}
+              />
+            )}
             {floatingProgress}
             {error && (
               <p role="alert" className="inline-error">
