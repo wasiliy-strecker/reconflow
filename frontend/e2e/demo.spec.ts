@@ -1,5 +1,30 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+
+// Hold one response so assertions observe the pending UI even on a fast backend.
+async function whilePending(
+  page: Page,
+  path: string,
+  check: () => Promise<void>,
+) {
+  let resume!: () => void;
+  const held = new Promise<void>((resolve) => {
+    resume = resolve;
+  });
+  await page.route(
+    path,
+    async (route) => {
+      await held;
+      await route.continue();
+    },
+    { times: 1 },
+  );
+  try {
+    await check();
+  } finally {
+    resume();
+  }
+}
 
 test("invoice review, reconciliation, import, manual decision and export", async ({
   page,
@@ -70,19 +95,71 @@ test("invoice review, reconciliation, import, manual decision and export", async
         "1190.00",
       );
     }
-    await page
-      .getByRole("button", { name: "Angaben bestätigen", exact: true })
-      .click();
+    await whilePending(page, "**/api/invoices/*", async () => {
+      const dialog = page.getByRole("dialog");
+      await dialog
+        .getByRole("button", { name: "Angaben bestätigen", exact: true })
+        .click();
+      await expect(
+        dialog
+          .getByRole("status")
+          .filter({ hasText: "Rechnung wird bestätigt" }),
+      ).toBeInViewport();
+    });
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page
-      .getByRole("button", { name: "Abgleich starten", exact: true })
-      .click();
-    await expect(
-      page.getByRole("heading", { name: "Jede Zahlung an ihrem Platz." }),
-    ).toBeVisible({ timeout: 30_000 });
+
+    await whilePending(page, "**/api/workspace", async () => {
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("status")).toContainText("wieder geladen");
+      await expect(page.locator(".stat-placeholder")).toHaveCount(4);
+    });
+    await expect(page.locator("tbody tr")).toHaveCount(6);
+
+    await whilePending(page, "**/api/reconciliation-runs", async () => {
+      await page
+        .getByRole("button", { name: "Abgleich starten", exact: true })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "Ergebnisse des Abgleichs" }),
+      ).toBeFocused();
+      await expect(page.getByRole("status")).toContainText(
+        "Zahlungen werden abgeglichen",
+      );
+      await expect(page.getByRole("status")).toBeInViewport();
+      await expect(
+        page.getByRole("button", { name: "Abgleich läuft …" }),
+      ).toBeDisabled();
+      await expect(page.locator(".stat-placeholder")).toHaveCount(2);
+      await expect(page.locator(".loading-row")).toHaveCount(6);
+      await expect(
+        page.getByText("Bereit für deinen ersten Abgleich"),
+      ).toBeHidden();
+    });
     await expect(page.locator("tbody .status-MATCHED")).toHaveCount(2);
     await expect(page.locator("tbody .status-PARTIAL")).toHaveCount(1);
     await expect(page.locator("tbody .status-DUPLICATE")).toHaveCount(1);
+    // A failed rerun keeps the previous completed results available.
+    await page.route(
+      "**/api/reconciliation-runs",
+      (r) =>
+        r.fulfill({
+          status: 429,
+          json: { detail: "Abgleich zurzeit nicht möglich." },
+        }),
+      { times: 1 },
+    );
+    await page
+      .getByRole("button", { name: "Abgleich starten", exact: true })
+      .click();
+    await expect(page.getByRole("alert")).toBeInViewport();
+    await expect(page.getByRole("alert")).toContainText(
+      "Abgleich zurzeit nicht möglich.",
+    );
+    await expect(page.locator("tbody .status-MATCHED")).toHaveCount(2);
+    await page
+      .getByRole("alert")
+      .getByRole("button", { name: "Meldung schließen" })
+      .click();
     if (process.env.CAPTURE_SCREENSHOTS === "1")
       await page.screenshot({ path: "../docs/screenshot.png", fullPage: true });
     await page

@@ -1,4 +1,10 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowDownToLine,
   ArrowRight,
@@ -169,7 +175,19 @@ function WorkspaceStat({
   );
 }
 
-function DemoTableSkeleton() {
+const reconcileProgress = "Zahlungen werden abgeglichen …";
+const restoreProgress = "Dein Arbeitsplatz wird wieder geladen …";
+
+function ActionProgress({ message }: { message: string }) {
+  return (
+    <div className="action-progress" role="status" aria-atomic="true">
+      <LoaderCircle size={18} className="spin" aria-hidden="true" />
+      {message}
+    </div>
+  );
+}
+
+function TableSkeleton() {
   return (
     <div className="loading-table" aria-hidden="true">
       {Array.from({ length: 6 }, (_, index) => (
@@ -187,6 +205,36 @@ function DemoTableSkeleton() {
         </div>
       ))}
     </div>
+  );
+}
+
+function OriginalPreview({ id, mime }: { id: string; mime: string | null }) {
+  const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+  const src = "/api/documents/" + id + "/file";
+  const props = {
+    src,
+    onLoad: () => setState("ready"),
+    onError: () => setState("failed"),
+  };
+  return (
+    <>
+      {state === "loading" && (
+        <div className="preview-progress" role="status">
+          <LoaderCircle className="spin" size={18} aria-hidden="true" />
+          Originalrechnung wird geöffnet …
+        </div>
+      )}
+      {state === "failed" ? (
+        <p role="alert">
+          Die Vorschau konnte nicht geladen werden. Das Original kannst du in
+          der Rechnungsliste herunterladen.
+        </p>
+      ) : mime === "application/pdf" ? (
+        <iframe title="Originalrechnung" {...props} />
+      ) : (
+        <img alt="Originalrechnung" {...props} />
+      )}
+    </>
   );
 }
 
@@ -216,7 +264,19 @@ export default function App() {
   const [workspace, setWorkspace] = useState<Workspace>(empty);
   const [active, setActive] = useState(false);
   const [tab, setTab] = useState("invoices");
-  const [busy, setBusy] = useState("");
+  const [busy, setBusy] = useState(() =>
+    sessionStorage.getItem("rf_csrf") ? restoreProgress : "",
+  );
+  const resultsHeading = useRef<HTMLHeadingElement>(null);
+  const reconciling = busy === reconcileProgress;
+  const showingMatchProgress = reconciling && tab === "matches";
+
+  useLayoutEffect(() => {
+    if (showingMatchProgress) {
+      resultsHeading.current?.focus({ preventScroll: true });
+      resultsHeading.current?.scrollIntoView({ block: "start" });
+    }
+  }, [showingMatchProgress]);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
@@ -280,9 +340,6 @@ export default function App() {
         credentials: "same-origin",
       });
       if (response.status === 503 && attempt < 7) {
-        setNotice(
-          "Die Demo wird gestartet. Das kann nach einer Pause etwas dauern.",
-        );
         await sleep(5000);
         continue;
       }
@@ -333,18 +390,38 @@ export default function App() {
       .then((r) => r.json())
       .then(setConfig)
       .catch(() => setError("Das Backend ist noch nicht erreichbar."));
-    if (csrf.current) {
-      api<{ csrf_token: string }>("/demo-sessions/current")
-        .then((data) => {
-          csrf.current = data.csrf_token;
+    if (!csrf.current) return;
+    let current = true;
+    async function restoreWorkspace() {
+      try {
+        const session = await api<{ csrf_token: string }>(
+          "/demo-sessions/current",
+        );
+        if (!current) return;
+        csrf.current = session.csrf_token;
+        const data = await api<Workspace>("/workspace");
+        if (current) {
           setActive(true);
-          return load();
-        })
-        .catch(() => {
+          setWorkspace(data);
+        }
+      } catch (e) {
+        if (current) {
           csrf.current = "";
           sessionStorage.removeItem("rf_csrf");
-        });
+          setError(
+            e instanceof Error
+              ? e.message
+              : "Die Sitzung konnte nicht geladen werden.",
+          );
+        }
+      } finally {
+        if (current) setBusy("");
+      }
     }
+    void restoreWorkspace();
+    return () => {
+      current = false;
+    };
   }, []);
 
   async function startDemo() {
@@ -414,11 +491,15 @@ export default function App() {
     });
   }
   async function match() {
-    await perform("Zahlungen werden abgeglichen …", async () => {
+    if (tab !== "matches") {
+      setQuery("");
+      setFilter("ALL");
+    }
+    setTab("matches");
+    await perform(reconcileProgress, async () => {
       await waitForJob(
         await api<Job>("/reconciliation-runs", { method: "POST" }),
       );
-      setTab("matches");
       setNotice(
         "Abgleich abgeschlossen. Jeder Fall zeigt die angewendete Regel.",
       );
@@ -546,7 +627,24 @@ export default function App() {
     (d) => !workspace.invoices.some((i) => i.document_id === d.id),
   );
   const startingDemo = busy === demoStartup;
+  const restoring = busy === restoreProgress;
+  const loadingWorkspace = startingDemo || restoring;
+  const loadingTable = loadingWorkspace || showingMatchProgress;
+  const floatingProgress =
+    busy && !loadingWorkspace && !showingMatchProgress ? (
+      <ActionProgress message={busy} />
+    ) : null;
   const currency = workspace.invoices[0]?.payload.currency || "EUR";
+
+  const pageError = error && !modalOpen && (
+    <div role="alert" className="message error">
+      <CircleAlert size={19} />
+      <span>{error}</span>
+      <button aria-label="Meldung schließen" onClick={() => setError("")}>
+        <X size={17} />
+      </button>
+    </div>
+  );
 
   return (
     <div className="app-shell">
@@ -697,19 +795,8 @@ export default function App() {
             </div>
             <span className="demo-tag">BEISPIELDATEN</span>
           </div>
-          {error && (
-            <div role="alert" className="message error">
-              <CircleAlert size={19} />
-              <span>{error}</span>
-              <button
-                aria-label="Meldung schließen"
-                onClick={() => setError("")}
-              >
-                <X size={17} />
-              </button>
-            </div>
-          )}
-          {notice && !error && !startingDemo && (
+          {tab !== "matches" && pageError}
+          {notice && !error && !busy && (
             <div role="status" className="message success">
               <Check size={18} />
               <span>{notice}</span>
@@ -721,13 +808,8 @@ export default function App() {
               </button>
             </div>
           )}
-          {busy && !startingDemo && (
-            <div className="working" role="status">
-              <LoaderCircle className="spin" size={18} />
-              {busy}
-            </div>
-          )}
-          {workspace.run?.stale && (
+          {!modalOpen && floatingProgress}
+          {workspace.run?.stale && !busy && (
             <div role="status" className="message">
               Die Rechnungen wurden geändert. Bitte den Abgleich erneut starten.
             </div>
@@ -735,11 +817,11 @@ export default function App() {
           <section
             className="stats"
             aria-label="Übersicht"
-            aria-busy={startingDemo}
+            aria-busy={loadingWorkspace}
           >
             <WorkspaceStat
               label="Rechnungsvolumen"
-              loading={startingDemo}
+              loading={loadingWorkspace}
               icon={<FileText size={18} />}
               value={
                 workspace.invoices.length
@@ -752,7 +834,7 @@ export default function App() {
             />
             <WorkspaceStat
               label="Zugeordnet"
-              loading={startingDemo}
+              loading={loadingWorkspace || reconciling}
               icon={
                 <span className="stat-icon green">
                   <CheckCheck size={17} />
@@ -768,7 +850,7 @@ export default function App() {
             />
             <WorkspaceStat
               label="Noch zu prüfen"
-              loading={startingDemo}
+              loading={loadingWorkspace || reconciling}
               icon={
                 <span className="stat-icon amber">
                   <CircleAlert size={17} />
@@ -784,7 +866,7 @@ export default function App() {
             />
             <WorkspaceStat
               label="Zahlungseingänge"
-              loading={startingDemo}
+              loading={loadingWorkspace}
               icon={<Wallet size={18} />}
               value={
                 <>
@@ -795,20 +877,24 @@ export default function App() {
               detail="Über CSV importiert und geprüft"
             />
           </section>
-          {startingDemo && (
+          {loadingWorkspace && (
             <div className="demo-loading-note" role="status" aria-atomic="true">
               <LoaderCircle className="spin" size={22} aria-hidden="true" />
               <div>
-                <strong>Dein Demo-Arbeitsplatz wird geladen</strong>
+                <strong>
+                  {restoring
+                    ? restoreProgress
+                    : "Dein Demo-Arbeitsplatz wird geladen"}
+                </strong>
                 <p>
-                  Bitte warte kurz. Wir laden sechs Beispielrechnungen und die
-                  zugehörigen Zahlungen. Nach einer Pause kann der Start etwas
-                  länger dauern.
+                  {restoring
+                    ? "Bitte warte kurz. Deine gespeicherten Daten werden geladen."
+                    : "Bitte warte kurz. Wir laden sechs Beispielrechnungen und die zugehörigen Zahlungen. Nach einer Pause kann der Start etwas länger dauern."}
                 </p>
               </div>
             </div>
           )}
-          {!startingDemo &&
+          {!loadingWorkspace &&
             !workspace.invoices.length &&
             !missingDocs.length && (
               <section className="welcome-card">
@@ -872,10 +958,10 @@ export default function App() {
                 </div>
               </section>
             )}
-          <section className="table-card" aria-busy={startingDemo}>
+          <section className="table-card">
             <div className="table-header">
               <div>
-                <h2>
+                <h2 ref={resultsHeading} tabIndex={-1}>
                   {
                     {
                       invoices: "Deine Rechnungen",
@@ -884,7 +970,7 @@ export default function App() {
                       activity: "Verarbeitungsprotokoll",
                     }[tab]
                   }{" "}
-                  <span className="count" hidden={startingDemo}>
+                  <span className="count" hidden={loadingTable}>
                     {tab === "invoices"
                       ? workspace.invoices.length
                       : tab === "payments"
@@ -912,7 +998,7 @@ export default function App() {
                     disabled={!!busy}
                   >
                     <CheckCheck size={17} />
-                    Abgleich starten
+                    {reconciling ? "Abgleich läuft …" : "Abgleich starten"}
                   </button>
                 )}
                 {workspace.run && (
@@ -927,7 +1013,7 @@ export default function App() {
                 )}
               </div>
             </div>
-            {!startingDemo && tab !== "activity" && (
+            {!loadingTable && tab !== "activity" && (
               <div className="table-toolbar">
                 <div className="filter-tabs">
                   {tab === "matches" ? (
@@ -966,8 +1052,25 @@ export default function App() {
                 </label>
               </div>
             )}
-            {startingDemo && <DemoTableSkeleton />}
-            <div className="table-scroll" hidden={startingDemo}>
+            {tab === "matches" && pageError}
+            {showingMatchProgress && (
+              <div className="match-progress" role="status" aria-atomic="true">
+                <LoaderCircle size={20} className="spin" aria-hidden="true" />
+                <div>
+                  <strong>{reconcileProgress}</strong>
+                  <p>
+                    Wir vergleichen die Rechnungen mit den Zahlungseingängen.
+                    Die Ergebnisse erscheinen hier automatisch.
+                  </p>
+                </div>
+              </div>
+            )}
+            {loadingTable && <TableSkeleton />}
+            <div
+              className="table-scroll"
+              aria-busy={loadingTable}
+              hidden={loadingTable}
+            >
               {tab === "invoices" && (
                 <table>
                   <thead>
@@ -1275,7 +1378,7 @@ export default function App() {
                 </table>
               )}
             </div>
-            {!startingDemo &&
+            {!loadingTable &&
               ((tab === "invoices" &&
                 !workspace.invoices.length &&
                 !missingDocs.length) ||
@@ -1395,6 +1498,7 @@ export default function App() {
                 <button
                   key={key}
                   className={importKind === key ? "selected" : ""}
+                  disabled={!!busy}
                   onClick={() => setImportKind(key)}
                 >
                   {label}
@@ -1455,6 +1559,7 @@ export default function App() {
                 ? "Diese Demo akzeptiert ausschließlich unsere synthetischen Beispieldateien."
                 : "Verwende zum Ausprobieren vorzugsweise die mitgelieferten Testdaten."}
             </p>
+            {floatingProgress}
             {error && (
               <p role="alert" className="inline-error">
                 {error}
@@ -1490,25 +1595,11 @@ export default function App() {
             <div className="invoice-review">
               <div className="original">
                 {selectedInvoice.document_id ? (
-                  selectedInvoice.mime === "application/pdf" ? (
-                    <iframe
-                      title="Originalrechnung"
-                      src={
-                        "/api/documents/" +
-                        selectedInvoice.document_id +
-                        "/file"
-                      }
-                    />
-                  ) : (
-                    <img
-                      alt="Originalrechnung"
-                      src={
-                        "/api/documents/" +
-                        selectedInvoice.document_id +
-                        "/file"
-                      }
-                    />
-                  )
+                  <OriginalPreview
+                    key={selectedInvoice.document_id}
+                    id={selectedInvoice.document_id}
+                    mime={selectedInvoice.mime}
+                  />
                 ) : (
                   <div className="empty-state">
                     <FileSpreadsheet size={30} />
@@ -1619,6 +1710,7 @@ export default function App() {
                   Bitte mit dem Original vergleichen. KI-Ergebnisse können
                   Fehler enthalten.
                 </p>
+                {floatingProgress}
                 {error && (
                   <p role="alert" className="inline-error">
                     {error}
@@ -1738,6 +1830,7 @@ export default function App() {
                   })}
                 </>
               )}
+            {floatingProgress}
             {error && (
               <p role="alert" className="inline-error">
                 {error}

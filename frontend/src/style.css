@@ -925,15 +925,41 @@ td.amount {
   color: #51765a;
   border: 1px solid #deeadf;
 }
-.working {
+.action-progress,
+.preview-progress {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--green);
-  font-size: 12px;
-  margin: 14px 0;
+  font-size: 14px;
+  font-weight: 600;
 }
-.demo-loading-note {
+.action-progress {
+  position: fixed;
+  z-index: 50;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 28px);
+  padding: 12px 18px;
+  border-radius: 9px;
+  background: var(--deep);
+  color: white;
+  box-shadow: 0 4px 16px #153c3426;
+  pointer-events: none;
+}
+.preview-progress {
+  padding: 12px 0;
+  color: var(--deep);
+}
+.table-header h2[tabindex] {
+  scroll-margin-top: 24px;
+}
+.table-header h2[tabindex]:focus {
+  outline: none;
+}
+.demo-loading-note,
+.match-progress {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -944,11 +970,20 @@ td.amount {
   background: #eff7f2;
   color: var(--deep);
 }
-.demo-loading-note svg {
+.match-progress {
+  margin: 0 18px 16px;
+}
+.demo-loading-note svg,
+.match-progress svg,
+.action-progress svg {
   flex-shrink: 0;
+}
+.demo-loading-note svg,
+.match-progress svg {
   color: var(--green);
 }
-.demo-loading-note p {
+.demo-loading-note p,
+.match-progress p {
   font-size: 13px;
   line-height: 1.5;
   margin-top: 4px;
@@ -1030,7 +1065,10 @@ td.amount {
 }
 @media (prefers-reduced-motion: reduce) {
   .skeleton,
-  .demo-loading-note .spin {
+  .demo-loading-note .spin,
+  .match-progress .spin,
+  .preview-progress .spin,
+  .action-progress .spin {
     animation: none;
   }
 }

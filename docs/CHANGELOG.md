@@ -338,3 +338,16 @@
   inside the viewport after clicking Start at 1440 and 390 pixels. The live session
   loaded six invoices and payments, completed the invoice workflow and reset its
   own test data. The mobile failure scenario used a simulated response.
+
+## 2026-11-25 17:46 CET — Immediate reconciliation and action feedback
+
+- Starting a reconciliation immediately opens and focuses the results. The pending
+  table and its two derived metrics show placeholders until the refreshed workspace
+  arrives. A failed rerun displays the error alongside the previous completed result.
+- Pending imports, confirmations, AI jobs, decisions, downloads, status checks and
+  resets now show the action in a viewport-visible status, including in dialogs.
+  Restoring a session and opening a document preview also provide loading feedback.
+- Verified the production build in Chromium with controlled network delays for
+  confirmation, refresh and reconciliation, plus a failed rerun. The invoice,
+  reconciliation, download, export, reset and mobile checks passed without paid AI.
+  Ruff, TypeScript and 29 focused Python tests passed.
