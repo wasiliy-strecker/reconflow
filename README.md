@@ -1,4 +1,4 @@
-# ReconFlow
+# ReconFlow – Invoice and Payment Reconciliation
 
 **Rechnungen mit KI auslesen. Angaben prüfen. Zahlungseingänge nachvollziehbar abgleichen.**
 

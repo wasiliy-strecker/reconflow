@@ -421,3 +421,11 @@
   and CSS matched the local build. Both public browser tests passed, covering
   the three-step journey, explicit reconciliation, manual assignment, Excel
   export, responsive navigation and reset of the isolated test session.
+
+## 2026-11-25 21:25 CET — Portfolio repository update
+
+- Updated the English project title for the existing public GitHub repository.
+  Checked the publication history against the project's privacy rules and private
+  file fingerprints. Gitleaks found no secrets, commit identities use GitHub
+  noreply addresses, and the six example invoices and payment CSV match the
+  synthetic fixture generator byte for byte.
