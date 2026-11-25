@@ -414,3 +414,10 @@
   between steps creates no reconciliation job, then exercised the explicit start,
   review, export and reset. Navigation fit at 320, 390 and 768 pixels and on
   desktop. TypeScript, the frontend build, Ruff and 29 focused Python tests passed.
+
+## 2026-11-25 18:27 CET — Guided workflow verified on AWS
+
+- Published frontend commit `4e8e71f`. The CloudFront entry page, JavaScript
+  and CSS matched the local build. Both public browser tests passed, covering
+  the three-step journey, explicit reconciliation, manual assignment, Excel
+  export, responsive navigation and reset of the isolated test session.
