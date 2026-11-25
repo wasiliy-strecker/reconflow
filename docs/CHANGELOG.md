@@ -394,3 +394,10 @@
   the bundled JPEG byte for byte and can be closed before assigning the payment.
   Checked the link on a 390-pixel viewport and a simulated document-free candidate.
   Both browser tests, TypeScript, the frontend build, Ruff and 30 Python checks passed.
+
+## 2026-11-25 18:15 CET — Public original invoice link verified
+
+- Published frontend commit `9eaae98` to the existing AWS demo. The public HTML,
+  JavaScript and CSS matched the locally tested build. Both public browser tests
+  passed, including opening the correct original for RE-2026-1005, closing its
+  tab and assigning the payment in the original dialog.
