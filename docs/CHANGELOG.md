@@ -351,3 +351,13 @@
   confirmation, refresh and reconciliation, plus a failed rerun. The invoice,
   reconciliation, download, export, reset and mobile checks passed without paid AI.
   Ruff, TypeScript and 29 focused Python tests passed.
+
+## 2026-11-25 17:47 CET — Public reconciliation feedback release verified
+
+- Released frontend commit `4999944` to the existing CloudFront demo. Verified the
+  public HTML, JavaScript and CSS against the tested artifacts. Both public browser
+  scenarios passed, including the immediate view switch during a held request, dialog
+  feedback, refresh and recovery from a simulated failed rerun.
+- Additional local mobile checks confirmed the KI progress status with a simulated
+  provider response, reduced motion and navigation away during reconciliation. The
+  completed job preserved the visitor's selected view.
