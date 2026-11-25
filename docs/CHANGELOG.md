@@ -329,3 +329,12 @@
   session reset. Mobile coverage checks reduced motion and recovery after a failed start.
 - TypeScript, production build, Ruff and 29 focused Python tests passed. AWS preflight
   verified the existing Stockholm website and the active Free Plan with positive credits.
+
+## 2026-11-25 17:29 CET — AWS demo startup verified
+
+- Published the static frontend from `0402062` to the existing demo. CloudFront's
+  entry page, JavaScript and CSS matched the tested build after invalidation.
+- Both browser scenarios passed on the public URL. Confirmed the wait message was
+  inside the viewport after clicking Start at 1440 and 390 pixels. The live session
+  loaded six invoices and payments, completed the invoice workflow and reset its
+  own test data. The mobile failure scenario used a simulated response.
