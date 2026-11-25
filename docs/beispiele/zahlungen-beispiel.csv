@@ -1,0 +1,7 @@
+payment_id,reference,amount,currency,paid_at,payer
+PAY-001,Rechnung RE-2026-1001,1190.00,EUR,2026-11-05,Nordlicht Studio
+PAY-002,RE-2026-1002,595.00,EUR,2026-11-05,Atelier Morgenrot
+PAY-003,Anzahlung RE-2026-1003,1000.00,EUR,2026-11-06,Linden & Partner
+PAY-004,RE-2026-1004,357.00,EUR,2026-11-06,Kollektiv West
+PAY-005,RE-2026-1004,357.00,EUR,2026-11-07,Kollektiv West
+PAY-006,Vielen Dank fuer das Projekt,833.00,EUR,2026-11-08,Mira Kunsthandel

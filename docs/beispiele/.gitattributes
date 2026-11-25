@@ -1,0 +1,5 @@
+# The public demo checks exact file bytes, including the CSV's CRLF line endings.
+*.csv -text -whitespace
+*.pdf binary
+*.png binary
+*.jpg binary

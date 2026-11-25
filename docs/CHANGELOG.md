@@ -312,3 +312,9 @@
 - Moved this checkout and its linked release worktree into the Python portfolio directory. Preserved existing Compose project and volume names.
 - Extracted benchmarking into its own repository. Removed the GPU dashboard, API integration, worker dispatch, provider dependency and GPU infrastructure from the invoice application. Kept the checksum-protected historical SQL migration for existing databases.
 - Verified 55 Python tests, Ruff, TypeScript, the production frontend build, application Terraform tests and the invoice browser flow including original downloads and Excel export.
+
+## 2026-11-25 08:15 CET — Example files for manual demo tests
+
+- Added the six synthetic original invoices and payment CSV to `docs/beispiele/` and
+  linked the folder from the README. All seven files matched the public demo's example
+  downloads byte for byte. Git preserves their exact bytes on checkout.

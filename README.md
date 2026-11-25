@@ -10,7 +10,7 @@ PostgreSQL, OpenAI, Docker und einer AWS-Testumgebung in Stockholm.
 ## Ausprobieren
 
 AWS-Test: **https://d33v3exmdsu4yz.cloudfront.net**. Dort **Demo starten** wählen.
-Die öffentliche Umgebung akzeptiert ausschließlich synthetische Beispieldateien.
+Die öffentliche Umgebung akzeptiert die sechs [Beispielrechnungen und die Zahlungs-CSV](docs/beispiele/).
 
 Voraussetzung: Docker Engine mit Compose und Buildx. Mindestens 3 GB freier
 Speicherplatz für Images und Build-Caches. Ein OpenAI-Schlüssel ist für die
