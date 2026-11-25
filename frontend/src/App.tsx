@@ -177,6 +177,33 @@ function WorkspaceStat({
 
 const reconcileProgress = "Zahlungen werden abgeglichen …";
 const restoreProgress = "Dein Arbeitsplatz wird wieder geladen …";
+const sections = [
+  {
+    key: "invoices",
+    label: "Rechnungen",
+    step: 1,
+    hint: "Lade deine Rechnungen oder starte mit den Beispieldaten. Prüfe die Angaben am Original.",
+  },
+  {
+    key: "payments",
+    label: "Zahlungen",
+    step: 2,
+    hint: "Prüfe, wer wie viel überwiesen hat und welche Rechnungsnummer im Verwendungszweck steht.",
+  },
+  {
+    key: "matches",
+    label: "Zahlungsabgleich",
+    step: 3,
+    hint: "Gleiche die Zahlungseingänge mit den bestätigten Rechnungen ab und prüfe offene Fälle.",
+  },
+  {
+    key: "activity",
+    label: "Aktivitäten",
+    step: null,
+    hint: "Hier siehst du den Status deiner Verarbeitungsaufträge.",
+  },
+] as const;
+type Section = (typeof sections)[number]["key"];
 
 function ActionProgress({ message }: { message: string }) {
   return (
@@ -428,20 +455,28 @@ export default function App() {
   });
   const [workspace, setWorkspace] = useState<Workspace>(empty);
   const [active, setActive] = useState(false);
-  const [tab, setTab] = useState("invoices");
+  const [tab, setTab] = useState<Section>("invoices");
+  const section = sections.find((item) => item.key === tab)!;
   const [busy, setBusy] = useState(() =>
     sessionStorage.getItem("rf_csrf") ? restoreProgress : "",
   );
   const resultsHeading = useRef<HTMLHeadingElement>(null);
+  const pageHeading = useRef<HTMLHeadingElement>(null);
+  const previousTab = useRef(tab);
   const reconciling = busy === reconcileProgress;
   const showingMatchProgress = reconciling && tab === "matches";
 
   useLayoutEffect(() => {
+    if (previousTab.current !== tab && !showingMatchProgress) {
+      pageHeading.current?.focus({ preventScroll: true });
+      pageHeading.current?.scrollIntoView({ block: "nearest" });
+    }
+    previousTab.current = tab;
     if (showingMatchProgress) {
       resultsHeading.current?.focus({ preventScroll: true });
       resultsHeading.current?.scrollIntoView({ block: "start" });
     }
-  }, [showingMatchProgress]);
+  }, [tab, showingMatchProgress]);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
@@ -589,7 +624,15 @@ export default function App() {
     };
   }, []);
 
+  function navigate(next: Section) {
+    setTab(next);
+    setQuery("");
+    setFilter("ALL");
+    setNotice("");
+  }
+
   async function startDemo() {
+    navigate("invoices");
     await perform(demoStartup, async () => {
       await ensureSession();
       const data = await api<Workspace>("/demo-sessions/seed", {
@@ -597,7 +640,7 @@ export default function App() {
       });
       setWorkspace(data);
       setNotice(
-        "Sechs synthetische Rechnungen und sechs Zahlungen sind bereit. Wähle eine Rechnung für die echte KI-Auswertung.",
+        "Die Beispieldaten sind geladen. Sechs Rechnungen und sechs Zahlungseingänge sind bereit.",
       );
     });
   }
@@ -656,11 +699,6 @@ export default function App() {
     });
   }
   async function match() {
-    if (tab !== "matches") {
-      setQuery("");
-      setFilter("ALL");
-    }
-    setTab("matches");
     await perform(reconcileProgress, async () => {
       await waitForJob(
         await api<Job>("/reconciliation-runs", { method: "POST" }),
@@ -693,6 +731,7 @@ export default function App() {
         );
       await load();
       setShowImport(false);
+      navigate(importKind === "payments" ? "payments" : "invoices");
       if (importKind === "document")
         setNotice("Dokument hochgeladen. Starte jetzt die KI-Auswertung.");
       else
@@ -762,6 +801,9 @@ export default function App() {
   }
 
   const rows = workspace.run?.stale ? [] : workspace.run?.payload.results || [];
+  const canReconcile =
+    workspace.payments.length > 0 ||
+    workspace.invoices.some((invoice) => invoice.confirmed);
   const selectedInvoice = workspace.invoices.find((i) => i.id === selected);
   const visibleInvoices = workspace.invoices.filter((i) =>
     [i.payload.invoice_number, i.payload.customer]
@@ -791,6 +833,35 @@ export default function App() {
   const missingDocs = workspace.documents.filter(
     (d) => !workspace.invoices.some((i) => i.document_id === d.id),
   );
+  const emptyMatch = !canReconcile
+    ? [
+        "Noch keine Daten für den Abgleich",
+        "Lade und bestätige eine Rechnung in Schritt 1 oder importiere Zahlungseingänge in Schritt 2.",
+      ]
+    : workspace.run?.stale
+      ? [
+          "Abgleich aktualisieren",
+          "Die bisherigen Ergebnisse sind veraltet. Gleiche die geänderten Daten erneut ab.",
+        ]
+      : [
+          "Bereit für deinen ersten Abgleich",
+          "Starte den Abgleich, um zu sehen, welche Zahlungen zu deinen Rechnungen passen.",
+        ];
+  const [emptyTitle, emptyHint] = {
+    invoices: [
+      "Hier ist Platz für deine Daten",
+      "Starte mit den Beispieldaten oder füge eine Rechnung hinzu.",
+    ],
+    payments: [
+      "Noch keine Zahlungseingänge",
+      "Importiere die Zahlungseingänge als CSV oder lade die Beispieldaten in Schritt 1.",
+    ],
+    matches: emptyMatch,
+    activity: [
+      "Noch keine Aufträge",
+      "Hier erscheinen deine KI-Auswertungen und Zahlungsabgleiche.",
+    ],
+  }[tab];
   const startingDemo = busy === demoStartup;
   const restoring = busy === restoreProgress;
   const loadingWorkspace = startingDemo || restoring;
@@ -827,32 +898,26 @@ export default function App() {
             Dein Demo-Arbeitsplatz<small>Alles im Blick</small>
           </div>
         </div>
-        <div className="nav-caption">ARBEITSBEREICH</div>
+        <div className="nav-caption">DEIN ABLAUF</div>
         <nav aria-label="Hauptnavigation">
-          {[
-            ["invoices", "Rechnungen", FileText],
-            ["matches", "Zahlungsabgleich", CheckCheck],
-            ["payments", "Zahlungen", Wallet],
-            ["activity", "Aktivitäten", LayoutDashboard],
-          ].map(([key, label, Icon]) => {
-            const I = Icon as typeof FileText;
-            return (
-              <button
-                key={String(key)}
-                className={"nav-item " + (tab === key ? "active" : "")}
-                onClick={() => {
-                  setTab(String(key));
-                  setQuery("");
-                }}
-              >
-                <I size={19} />
-                {String(label)}
-                {key === "invoices" && workspace.invoices.length > 0 && (
-                  <span className="nav-count">{workspace.invoices.length}</span>
-                )}
-              </button>
-            );
-          })}
+          {sections.map(({ key, label, step }) => (
+            <button
+              key={key}
+              className={"nav-item " + (tab === key ? "active" : "")}
+              aria-current={tab === key ? "page" : undefined}
+              aria-label={step ? `Schritt ${step}: ${label}` : label}
+              onClick={() => navigate(key)}
+            >
+              {step ? (
+                <span className="nav-step" aria-hidden="true">
+                  {step}
+                </span>
+              ) : (
+                <LayoutDashboard size={20} aria-hidden="true" />
+              )}
+              {label}
+            </button>
+          ))}
         </nav>
         <div className="sidebar-bottom">
           <div className="demo-note">
@@ -884,16 +949,7 @@ export default function App() {
         <header className="topbar">
           <div className="breadcrumb">
             Arbeitsbereich <ChevronRight size={14} />
-            <strong>
-              {
-                {
-                  invoices: "Rechnungen",
-                  matches: "Zahlungsabgleich",
-                  payments: "Zahlungen",
-                  activity: "Aktivitäten",
-                }[tab]
-              }
-            </strong>
+            <strong>{section.label}</strong>
           </div>
           <div className="topbar-right">
             <span className="pill neutral">
@@ -906,8 +962,10 @@ export default function App() {
         <main>
           <div className="page-heading">
             <div>
-              <div className="eyebrow">WENIGER SUCHEN. MEHR ÜBERBLICK.</div>
-              <h1>
+              {section.step && (
+                <div className="eyebrow">Schritt {section.step} von 3</div>
+              )}
+              <h1 ref={pageHeading} tabIndex={-1}>
                 {
                   {
                     invoices: "Rechnungen verstehen.",
@@ -918,34 +976,42 @@ export default function App() {
                 }
               </h1>
               <p>
-                Von der Rechnung zur passenden Zahlung. Mit KI und klaren
-                Regeln.
+                {tab === "invoices" && workspace.invoices.length
+                  ? "Öffne eine Rechnung und prüfe die Angaben am Original. Gehe anschließend weiter zu den Zahlungen."
+                  : tab === "matches" && workspace.run && !workspace.run.stale
+                    ? "Öffne einen Fall, um die Zuordnung zu prüfen, oder lade den Abgleich als Excel-Datei herunter."
+                    : section.hint}
               </p>
             </div>
-            <div className="heading-actions">
-              <button
-                className="button secondary"
-                onClick={() => {
-                  setImportKind("payments");
-                  setShowImport(true);
-                }}
-                disabled={!!busy}
-              >
-                <FileSpreadsheet size={17} />
-                CSV importieren
-              </button>
-              <button
-                className="button primary"
-                onClick={() => {
-                  setImportKind("document");
-                  setShowImport(true);
-                }}
-                disabled={!!busy}
-              >
-                <Plus size={18} />
-                Rechnung hinzufügen
-              </button>
-            </div>
+            {(tab === "invoices" || tab === "payments") && (
+              <div className="heading-actions">
+                {tab === "payments" ? (
+                  <button
+                    className="button secondary"
+                    onClick={() => {
+                      setImportKind("payments");
+                      setShowImport(true);
+                    }}
+                    disabled={!!busy}
+                  >
+                    <FileSpreadsheet size={17} />
+                    CSV importieren
+                  </button>
+                ) : (
+                  <button
+                    className="button primary"
+                    onClick={() => {
+                      setImportKind("document");
+                      setShowImport(true);
+                    }}
+                    disabled={!!busy}
+                  >
+                    <Plus size={18} />
+                    Rechnung hinzufügen
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div className="demo-banner">
             <div className="banner-icon">
@@ -976,7 +1042,8 @@ export default function App() {
           {!modalOpen && floatingProgress}
           {workspace.run?.stale && !busy && (
             <div role="status" className="message">
-              Die Rechnungen wurden geändert. Bitte den Abgleich erneut starten.
+              Die Daten haben sich geändert. Aktualisiere den Zahlungsabgleich
+              in Schritt 3.
             </div>
           )}
           <section
@@ -1059,7 +1126,8 @@ export default function App() {
               </div>
             </div>
           )}
-          {!loadingWorkspace &&
+          {tab === "invoices" &&
+            !loadingWorkspace &&
             !workspace.invoices.length &&
             !missingDocs.length && (
               <section className="welcome-card">
@@ -1156,17 +1224,41 @@ export default function App() {
                 </p>
               </div>
               <div className="table-actions">
-                {workspace.invoices.length > 0 && (
+                {tab === "invoices" && workspace.invoices.length > 0 && (
                   <button
-                    className="button primary small-button"
+                    className="button secondary small-button"
+                    onClick={() => navigate("payments")}
+                  >
+                    Weiter zu den Zahlungen <ArrowRight size={16} />
+                  </button>
+                )}
+                {tab === "payments" && canReconcile && (
+                  <button
+                    className="button secondary small-button"
+                    onClick={() => navigate("matches")}
+                  >
+                    Weiter zum Zahlungsabgleich <ArrowRight size={16} />
+                  </button>
+                )}
+                {tab === "matches" && canReconcile && (
+                  <button
+                    className={
+                      workspace.run && !workspace.run.stale
+                        ? "button secondary small-button"
+                        : "button primary small-button"
+                    }
                     onClick={match}
                     disabled={!!busy}
                   >
                     <CheckCheck size={17} />
-                    {reconciling ? "Abgleich läuft …" : "Abgleich starten"}
+                    {reconciling
+                      ? "Abgleich läuft …"
+                      : workspace.run
+                        ? "Erneut abgleichen"
+                        : "Abgleich starten"}
                   </button>
                 )}
-                {workspace.run && (
+                {tab === "matches" && workspace.run && (
                   <button
                     className="button secondary small-button"
                     onClick={download}
@@ -1552,16 +1644,8 @@ export default function App() {
                 (tab === "activity" && !workspace.jobs.length)) && (
                 <div className="empty-state">
                   <FolderOpen size={30} />
-                  <strong>
-                    {tab === "matches"
-                      ? "Bereit für deinen ersten Abgleich"
-                      : "Hier ist Platz für deine Daten"}
-                  </strong>
-                  <p>
-                    {tab === "matches"
-                      ? "Lade Rechnungen und Zahlungen und starte den Abgleich."
-                      : "Starte mit den Beispieldaten oder importiere eine Datei."}
-                  </p>
+                  <strong>{emptyTitle}</strong>
+                  <p>{emptyHint}</p>
                 </div>
               )}
             <div className="table-footer">
@@ -1580,6 +1664,7 @@ export default function App() {
                       csrf.current = "";
                       sessionStorage.removeItem("rf_csrf");
                       setWorkspace(empty);
+                      navigate("invoices");
                       setActive(false);
                       setSelected(null);
                       setSelectedMatch(null);
@@ -1590,31 +1675,6 @@ export default function App() {
                   Sitzung zurücksetzen
                 </button>
               )}
-            </div>
-          </section>
-          <section className="how-it-works">
-            <div>
-              <span>01</span>
-              <div>
-                <strong>Rechnung hinzufügen</strong>
-                <p>PDF oder Foto. Die KI erkennt die Angaben.</p>
-              </div>
-            </div>
-            <ArrowRight size={16} />
-            <div>
-              <span>02</span>
-              <div>
-                <strong>Angaben bestätigen</strong>
-                <p>Du prüfst das Ergebnis am Original.</p>
-              </div>
-            </div>
-            <ArrowRight size={16} />
-            <div>
-              <span>03</span>
-              <div>
-                <strong>Zahlungen abgleichen</strong>
-                <p>Klare Regeln. Verständliche Ergebnisse.</p>
-              </div>
             </div>
           </section>
           <footer className="page-footer">

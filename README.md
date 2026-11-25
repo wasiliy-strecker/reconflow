@@ -26,12 +26,9 @@ docker compose up --build -d
 Die Ports sind ausschließlich an localhost gebunden. PostgreSQL, S3/SQS-Emulator,
 Setup, API, Worker und Frontend sind enthalten. Das Setup darf erfolgreich mit Exit 0 enden.
 
-1. **Demo starten** lädt sechs synthetische Rechnungen und sechs Zahlungen.
-2. Eine Rechnung öffnen und **Mit KI auslesen** wählen. Das ist ein echter OpenAI-Aufruf.
-3. Erkannte Angaben am Original prüfen und **Angaben bestätigen** wählen.
-4. **Abgleich starten** zeigt passende Zahlungen, Teilzahlungen und Duplikatverdacht.
-5. Bei der unzugeordneten Mira-Zahlung einen KI-Vorschlag anfordern und selbst zuordnen.
-6. **Excel** lädt einen Bericht mit Abgleich, Rechnungen, Zahlungen und Importen herunter.
+1. **Rechnungen** öffnen und **Demo starten** wählen. Die Demo lädt sechs Rechnungen und sechs Zahlungseingänge. Optional eine Rechnung mit **Mit KI auslesen** verarbeiten, die Angaben am Original prüfen und bestätigen. Das Auslesen löst einen echten OpenAI-Aufruf aus.
+2. **Weiter zu den Zahlungen** wählen. Zahler, Betrag und Verwendungszweck prüfen.
+3. **Weiter zum Zahlungsabgleich** und dann **Abgleich starten** wählen. Die Ergebnisse zeigen passende Zahlungen, eine Teilzahlung und einen Duplikatverdacht. Bei der unzugeordneten Zahlung von Mira Kunsthandel das Original prüfen und selbst zuordnen. Bei Bedarf einen KI-Vorschlag einholen. **Excel** lädt den Bericht herunter.
 
 Vorbefüllte Beispieldaten sind ausdrücklich als **Beispielwerte** gekennzeichnet.
 KI-Ergebnisse werden niemals automatisch bestätigt oder als Buchung ausgeführt.

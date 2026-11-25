@@ -31,6 +31,14 @@ test("invoice review, reconciliation, import, manual decision and export", async
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  let runRequests = 0;
+  page.on("request", (request) => {
+    if (
+      request.method() === "POST" &&
+      request.url().endsWith("/api/reconciliation-runs")
+    )
+      runRequests++;
+  });
   await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "Rechnungen verstehen." }),
@@ -115,10 +123,38 @@ test("invoice review, reconciliation, import, manual decision and export", async
     });
     await expect(page.locator("tbody tr")).toHaveCount(6);
 
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+    const activePage = nav.locator('[aria-current="page"]');
+    const startRun = page.getByRole("button", {
+      name: "Abgleich starten",
+      exact: true,
+    });
+    await expect(nav.getByRole("button")).toHaveText([
+      "1Rechnungen",
+      "2Zahlungen",
+      "3Zahlungsabgleich",
+      "Aktivitäten",
+    ]);
+    await expect(activePage).toHaveAccessibleName("Schritt 1: Rechnungen");
+    await expect(startRun).toHaveCount(0);
+    await page.getByRole("button", { name: "Weiter zu den Zahlungen" }).click();
+    await expect(activePage).toHaveAccessibleName("Schritt 2: Zahlungen");
+    await expect(
+      page.getByRole("row").filter({ hasText: "PAY-006" }),
+    ).toBeVisible();
+    await expect(startRun).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Weiter zum Zahlungsabgleich" })
+      .click();
+    await expect(activePage).toHaveAccessibleName(
+      "Schritt 3: Zahlungsabgleich",
+    );
+    await expect(
+      page.getByText("Bereit für deinen ersten Abgleich"),
+    ).toBeVisible();
+    expect(runRequests).toBe(0);
     await whilePending(page, "**/api/reconciliation-runs", async () => {
-      await page
-        .getByRole("button", { name: "Abgleich starten", exact: true })
-        .click();
+      await startRun.click();
       await expect(
         page.getByRole("heading", { name: "Ergebnisse des Abgleichs" }),
       ).toBeFocused();
@@ -151,7 +187,7 @@ test("invoice review, reconciliation, import, manual decision and export", async
       { times: 1 },
     );
     await page
-      .getByRole("button", { name: "Abgleich starten", exact: true })
+      .getByRole("button", { name: "Erneut abgleichen", exact: true })
       .click();
     await expect(page.getByRole("alert")).toBeInViewport();
     await expect(page.getByRole("alert")).toContainText(
@@ -239,6 +275,15 @@ test("invoice review, reconciliation, import, manual decision and export", async
     expect(file.suggestedFilename()).toBe("ReconFlow-Abgleich.xlsx");
     const path = await file.path();
     expect((await readFile(path!)).subarray(0, 2).toString()).toBe("PK");
+    await nav.getByRole("button", { name: "Aktivitäten" }).click();
+    await expect(startRun).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Erneut abgleichen" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Excel", exact: true }),
+    ).toHaveCount(0);
+    await nav.getByRole("button", { name: "Schritt 2: Zahlungen" }).click();
     await page
       .getByRole("button", { name: "CSV importieren", exact: true })
       .click();
@@ -253,15 +298,25 @@ test("invoice review, reconciliation, import, manual decision and export", async
         "0 Einträge importiert. 6 bereits vorhandene Einträge übersprungen.",
       ),
     ).toBeVisible();
-    await page.setViewportSize({ width: 390, height: 844 });
+    for (const width of [320, 768, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true);
+      for (const button of await nav.getByRole("button").all()) {
+        const fits = await button.evaluate(
+          (node) =>
+            node.clientWidth >= node.scrollWidth &&
+            parseFloat(getComputedStyle(node).fontSize) >= 11,
+        );
+        expect(fits).toBe(true);
+      }
+    }
     await expect(
-      page.getByRole("heading", { name: "Jede Zahlung an ihrem Platz." }),
+      page.getByRole("heading", { name: "Zahlungseingänge im Blick." }),
     ).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
     if (process.env.CAPTURE_SCREENSHOTS === "1")
       await page.screenshot({
         path: "../docs/screenshot-mobile.png",
@@ -273,6 +328,7 @@ test("invoice review, reconciliation, import, manual decision and export", async
       page.getByRole("button", { name: "Demo starten", exact: true }),
     ).toBeVisible();
     await expect(page.locator("tbody tr")).toHaveCount(0);
+    await expect(activePage).toHaveAccessibleName("Schritt 1: Rechnungen");
   } finally {
     const csrf = await page.evaluate(() => sessionStorage.getItem("rf_csrf"));
     if (csrf)

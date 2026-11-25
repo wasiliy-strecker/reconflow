@@ -401,3 +401,16 @@
   JavaScript and CSS matched the locally tested build. Both public browser tests
   passed, including opening the correct original for RE-2026-1005, closing its
   tab and assigning the payment in the original dialog.
+
+## 2026-11-25 18:26 CET — Guide the demo through three steps
+
+- Numbered the shared desktop and mobile navigation: invoices, incoming payments,
+  then reconciliation. Each of the first two tables links to the next step.
+  The activity log remains independently accessible.
+- Scoped import actions to their respective steps. Starting or repeating a
+  reconciliation and exporting its report are available in step three. Updated
+  empty states, demo startup, session reset and the README walkthrough.
+- Both local Chromium scenarios passed. The workflow check verified that moving
+  between steps creates no reconciliation job, then exercised the explicit start,
+  review, export and reset. Navigation fit at 320, 390 and 768 pixels and on
+  desktop. TypeScript, the frontend build, Ruff and 29 focused Python tests passed.

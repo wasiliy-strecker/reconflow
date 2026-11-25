@@ -75,6 +75,9 @@ Original files are served through the session-authorized API, not public bucket 
 Locally, a private Docker document volume provides a fallback after Moto loses its
 in-memory objects. Local volumes are retained until explicitly removed by the operator.
 The static first screen does not query the database. No keep-alive pinger is used.
+The workspace guides visitors from invoices to incoming payments and then to reconciliation.
+Visiting a step only changes the view. An explicit action in the reconciliation view
+starts a run. Its results, manual review and Excel export are available in that view.
 
 ## Deployment boundary
 
