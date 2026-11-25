@@ -201,6 +201,32 @@ test("invoice review, reconciliation, import, manual decision and export", async
     const choice = assignment.getByRole("article", { name: "RE-2026-1005" });
     await expect(choice).toContainText("Mira Kunsthandel");
     await expect(choice).toContainText("833,00");
+    const original = choice.getByRole("link", {
+      name: "Originalrechnung ansehen (neuer Tab)",
+    });
+    const [originalTab] = await Promise.all([
+      page.waitForEvent("popup"),
+      original.click(),
+    ]);
+    try {
+      await expect(originalTab).toHaveURL(/\/api\/documents\/[^/]+\/file$/);
+      await expect
+        .poll(() =>
+          originalTab
+            .locator("img")
+            .evaluate((img: HTMLImageElement) => img.naturalWidth),
+        )
+        .toBeGreaterThan(0);
+      const [document, example] = await Promise.all([
+        page.request.get(originalTab.url()),
+        page.request.get("/api/examples/4"),
+      ]);
+      expect(document.ok() && example.ok()).toBe(true);
+      expect((await document.body()).equals(await example.body())).toBe(true);
+    } finally {
+      await originalTab.close();
+    }
+    await expect(choice).toBeVisible();
     await choice
       .getByRole("button", { name: "Zahlung dieser Rechnung zuordnen" })
       .click();

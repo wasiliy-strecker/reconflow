@@ -384,3 +384,13 @@
 - The first live check timed out while the reconciliation job was still running.
   The browser test now gives asynchronous results up to 60 seconds to arrive.
   The verification used synthetic data in its own session and made no AI requests.
+
+## 2026-11-25 18:14 CET — Inspect an original invoice from payment review
+
+- Each payment candidate with a linked document opens its session-authorized
+  original in a separate browser tab. Closing the tab returns the visitor to
+  the same payment decision. A candidate without a document explains this inline.
+- Verified in local Chromium that the Mira Kunsthandel original renders, matches
+  the bundled JPEG byte for byte and can be closed before assigning the payment.
+  Checked the link on a 390-pixel viewport and a simulated document-free candidate.
+  Both browser tests, TypeScript, the frontend build, Ruff and 30 Python checks passed.

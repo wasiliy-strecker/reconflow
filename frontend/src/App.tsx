@@ -300,6 +300,22 @@ function PaymentReview({
                   </strong>
                 </div>
               </div>
+              {i.document_id ? (
+                <a
+                  className="original-link"
+                  href={originalFileUrl(i.document_id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-describedby={"choice-" + i.id}
+                >
+                  Originalrechnung ansehen (neuer Tab)
+                  <ArrowUpRight size={15} aria-hidden="true" />
+                </a>
+              ) : (
+                <p className="choice-help">
+                  Für diese Rechnung ist kein Original hinterlegt.
+                </p>
+              )}
               {canAssign(i) ? (
                 <button
                   className="button primary"
@@ -354,11 +370,14 @@ function PaymentReview({
   );
 }
 
+function originalFileUrl(documentId: string) {
+  return "/api/documents/" + encodeURIComponent(documentId) + "/file";
+}
+
 function OriginalPreview({ id, mime }: { id: string; mime: string | null }) {
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
-  const src = "/api/documents/" + id + "/file";
   const props = {
-    src,
+    src: originalFileUrl(id),
     onLoad: () => setState("ready"),
     onError: () => setState("failed"),
   };
@@ -726,13 +745,13 @@ export default function App() {
   function originalDownload(documentId: string, filename: string) {
     return (
       <button
-        className="original-download"
+        className="original-link"
         disabled={!!busy}
         aria-label={"Original herunterladen: " + filename}
         onClick={(event) => {
           event.stopPropagation();
           void perform("Original wird heruntergeladen …", () =>
-            saveFile("/api/documents/" + documentId + "/file", filename),
+            saveFile(originalFileUrl(documentId), filename),
           );
         }}
       >
