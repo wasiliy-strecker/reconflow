@@ -10,9 +10,29 @@ test("invoice review, reconciliation, import, manual decision and export", async
   await expect(
     page.getByRole("heading", { name: "Rechnungen verstehen." }),
   ).toBeVisible();
+  let releaseSeed!: () => void;
+  const holdSeed = new Promise<void>((resolve) => {
+    releaseSeed = resolve;
+  });
+  await page.route("**/api/demo-sessions/seed", async (route) => {
+    await holdSeed;
+    await route.continue();
+  });
   await page.getByRole("button", { name: "Demo starten", exact: true }).click();
+  try {
+    await expect(page.getByRole("status")).toContainText("Bitte warte kurz");
+    await expect(page.locator(".stat-placeholder")).toHaveCount(4);
+    await expect(page.locator(".loading-row")).toHaveCount(6);
+    await expect(page.getByText("Hier ist Platz für deine Daten")).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "Daten werden geladen …" }),
+    ).toBeDisabled();
+  } finally {
+    releaseSeed();
+  }
   await expect(page.locator("tbody tr")).toHaveCount(6, { timeout: 60_000 });
   try {
+    await expect(page.locator(".demo-loading-note")).toHaveCount(0);
     for (const [index, filename] of [
       [0, "RE-2026-1001.pdf"],
       [1, "RE-2026-1002.png"],
@@ -115,13 +135,60 @@ test("invoice review, reconciliation, import, manual decision and export", async
         fullPage: true,
       });
     expect(errors).toEqual([]);
+    await page.getByRole("button", { name: "Sitzung zurücksetzen" }).click();
+    await expect(
+      page.getByRole("button", { name: "Demo starten", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator("tbody tr")).toHaveCount(0);
   } finally {
     const csrf = await page.evaluate(() => sessionStorage.getItem("rf_csrf"));
-    await page.request.delete("/api/demo-sessions/current", {
-      headers: {
-        "x-csrf-token": csrf || "",
-        Origin: process.env.DEMO_URL || "http://localhost:5173",
-      },
-    });
+    if (csrf)
+      await page.request.delete("/api/demo-sessions/current", {
+        headers: {
+          "x-csrf-token": csrf,
+          Origin: process.env.DEMO_URL || "http://localhost:5173",
+        },
+      });
   }
+});
+
+test("a failed demo start clears the placeholders and allows another attempt on mobile", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  let failStart!: () => void;
+  const holdStart = new Promise<void>((resolve) => {
+    failStart = resolve;
+  });
+  await page.route("**/api/demo-sessions", async (route) => {
+    await holdStart;
+    await route.fulfill({
+      status: 429,
+      json: { detail: "Bitte später erneut versuchen." },
+    });
+  });
+  await page.goto("/");
+  const start = page.getByRole("button", { name: "Demo starten", exact: true });
+  await start.click();
+  try {
+    await expect(page.getByRole("status")).toContainText("Bitte warte kurz");
+    await expect(page.locator(".loading-row").first()).toBeVisible();
+    await expect(page.locator(".skeleton").first()).toHaveCSS(
+      "animation-name",
+      "none",
+    );
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  } finally {
+    failStart();
+  }
+  await expect(page.getByRole("alert")).toContainText(
+    "Bitte später erneut versuchen.",
+  );
+  await expect(page.locator(".skeleton")).toHaveCount(0);
+  await expect(start).toBeEnabled();
 });

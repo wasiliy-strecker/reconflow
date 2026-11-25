@@ -318,3 +318,14 @@
 - Added the six synthetic original invoices and payment CSV to `docs/beispiele/` and
   linked the folder from the README. All seven files matched the public demo's example
   downloads byte for byte. Git preserves their exact bytes on checkout.
+
+## 2026-11-25 17:28 CET — Demo startup feedback
+
+- Replace empty counts and the empty invoice list with four metric placeholders and six
+  placeholder rows during demo startup. Show a screen-reader status message in place
+  of the start card, including while the database resumes. Respect reduced motion.
+- Verified the production frontend locally against the API. Desktop browser coverage
+  includes loading, populated results, original downloads, reconciliation, export and
+  session reset. Mobile coverage checks reduced motion and recovery after a failed start.
+- TypeScript, production build, Ruff and 29 focused Python tests passed. AWS preflight
+  verified the existing Stockholm website and the active Free Plan with positive credits.

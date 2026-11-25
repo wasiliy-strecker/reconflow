@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ArrowDownToLine,
   ArrowRight,
@@ -132,6 +132,63 @@ const money = (value: string | number | null, currency = "EUR") =>
     Number(value || 0),
   );
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const demoStartup = "Beispieldaten werden geladen …";
+
+function WorkspaceStat({
+  label,
+  icon,
+  value,
+  detail,
+  loading,
+}: {
+  label: string;
+  icon: ReactNode;
+  value: ReactNode;
+  detail: string;
+  loading: boolean;
+}) {
+  return (
+    <div className="stat">
+      <div className="stat-top">
+        {label}
+        {icon}
+      </div>
+      {loading ? (
+        <div aria-hidden="true" className="stat-placeholder">
+          <span className="skeleton" />
+          <span className="skeleton" />
+        </div>
+      ) : (
+        <>
+          <strong>{value}</strong>
+          <span>{detail}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DemoTableSkeleton() {
+  return (
+    <div className="loading-table" aria-hidden="true">
+      {Array.from({ length: 6 }, (_, index) => (
+        <div className="loading-row" key={index}>
+          <span className="loading-invoice">
+            <span className="skeleton document-shape" />
+            <span className="loading-lines">
+              <span className="skeleton" />
+              <span className="skeleton" />
+            </span>
+          </span>
+          <span className="skeleton customer-shape" />
+          <span className="skeleton amount-shape" />
+          <span className="skeleton status-shape" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 async function saveFile(path: string, filename: string) {
   const response = await fetch(path);
@@ -291,7 +348,7 @@ export default function App() {
   }, []);
 
   async function startDemo() {
-    await perform("Beispieldaten werden geladen …", async () => {
+    await perform(demoStartup, async () => {
       await ensureSession();
       const data = await api<Workspace>("/demo-sessions/seed", {
         method: "POST",
@@ -488,6 +545,7 @@ export default function App() {
   const missingDocs = workspace.documents.filter(
     (d) => !workspace.invoices.some((i) => i.document_id === d.id),
   );
+  const startingDemo = busy === demoStartup;
   const currency = workspace.invoices[0]?.payload.currency || "EUR";
 
   return (
@@ -539,7 +597,8 @@ export default function App() {
             <strong>Ausprobieren. Verstehen.</strong>
             <p>Echte Abläufe mit fiktiven Rechnungen und Zahlungen.</p>
             <button onClick={startDemo} disabled={!!busy}>
-              Beispieldaten laden <ArrowRight size={15} />
+              {startingDemo ? "Daten werden geladen …" : "Beispieldaten laden"}{" "}
+              <ArrowRight size={15} />
             </button>
           </div>
           <a
@@ -650,7 +709,7 @@ export default function App() {
               </button>
             </div>
           )}
-          {notice && !error && (
+          {notice && !error && !startingDemo && (
             <div role="status" className="message success">
               <Check size={18} />
               <span>{notice}</span>
@@ -662,7 +721,7 @@ export default function App() {
               </button>
             </div>
           )}
-          {busy && (
+          {busy && !startingDemo && (
             <div className="working" role="status">
               <LoaderCircle className="spin" size={18} />
               {busy}
@@ -673,120 +732,147 @@ export default function App() {
               Die Rechnungen wurden geändert. Bitte den Abgleich erneut starten.
             </div>
           )}
-          <section className="stats" aria-label="Übersicht">
-            <div className="stat">
-              <div className="stat-top">
-                Rechnungsvolumen <FileText size={18} />
-              </div>
-              <strong>
-                {workspace.invoices.length
+          <section
+            className="stats"
+            aria-label="Übersicht"
+            aria-busy={startingDemo}
+          >
+            <WorkspaceStat
+              label="Rechnungsvolumen"
+              loading={startingDemo}
+              icon={<FileText size={18} />}
+              value={
+                workspace.invoices.length
                   ? mixedCurrencies
                     ? "Mehrere Währungen"
                     : money(total, currency)
-                  : "—"}
-              </strong>
-              <span>
-                {workspace.invoices.length} Rechnungen im Arbeitsplatz
-              </span>
-            </div>
-            <div className="stat">
-              <div className="stat-top">
-                Zugeordnet{" "}
+                  : "—"
+              }
+              detail={workspace.invoices.length + " Rechnungen im Arbeitsplatz"}
+            />
+            <WorkspaceStat
+              label="Zugeordnet"
+              loading={startingDemo}
+              icon={
                 <span className="stat-icon green">
                   <CheckCheck size={17} />
                 </span>
-              </div>
-              <strong>
-                {workspace.run ? matched : "—"}
-                <small>Rechnungen</small>
-              </strong>
-              <span>Referenz, Betrag und Währung stimmen</span>
-            </div>
-            <div className="stat">
-              <div className="stat-top">
-                Noch zu prüfen{" "}
+              }
+              value={
+                <>
+                  {workspace.run ? matched : "—"}
+                  <small>Rechnungen</small>
+                </>
+              }
+              detail="Referenz, Betrag und Währung stimmen"
+            />
+            <WorkspaceStat
+              label="Noch zu prüfen"
+              loading={startingDemo}
+              icon={
                 <span className="stat-icon amber">
                   <CircleAlert size={17} />
                 </span>
-              </div>
-              <strong>
-                {workspace.run ? review : "—"}
-                <small>Fälle</small>
-              </strong>
-              <span>Abweichungen nachvollziehbar klären</span>
-            </div>
-            <div className="stat">
-              <div className="stat-top">
-                Zahlungseingänge <Wallet size={18} />
-              </div>
-              <strong>
-                {workspace.payments.length}
-                <small>Einträge</small>
-              </strong>
-              <span>Über CSV importiert und geprüft</span>
-            </div>
+              }
+              value={
+                <>
+                  {workspace.run ? review : "—"}
+                  <small>Fälle</small>
+                </>
+              }
+              detail="Abweichungen nachvollziehbar klären"
+            />
+            <WorkspaceStat
+              label="Zahlungseingänge"
+              loading={startingDemo}
+              icon={<Wallet size={18} />}
+              value={
+                <>
+                  {workspace.payments.length}
+                  <small>Einträge</small>
+                </>
+              }
+              detail="Über CSV importiert und geprüft"
+            />
           </section>
-          {!workspace.invoices.length && !missingDocs.length && (
-            <section className="welcome-card">
-              <div className="welcome-copy">
-                <span className="pill green">
-                  <Sparkles size={14} />
-                  DEIN ERSTER ABGLEICH
-                </span>
-                <h2>
-                  Sechs Rechnungen.
-                  <br />
-                  Ein klarer Überblick.
-                </h2>
+          {startingDemo && (
+            <div className="demo-loading-note" role="status" aria-atomic="true">
+              <LoaderCircle className="spin" size={22} aria-hidden="true" />
+              <div>
+                <strong>Dein Demo-Arbeitsplatz wird geladen</strong>
                 <p>
-                  Entdecke passende Zahlungen, eine Teilzahlung und einen
-                  möglichen Doppeleingang. Oder lass eine Beispielrechnung
-                  direkt von der KI auslesen.
+                  Bitte warte kurz. Wir laden sechs Beispielrechnungen und die
+                  zugehörigen Zahlungen. Nach einer Pause kann der Start etwas
+                  länger dauern.
                 </p>
-                <button
-                  className="button primary"
-                  onClick={startDemo}
-                  disabled={!!busy}
-                >
-                  Demo starten <ArrowRight size={17} />
-                </button>
-                <small>Ohne Anmeldung · Mit herunterladbaren Beispielen</small>
               </div>
-              <div className="welcome-visual" aria-hidden="true">
-                <div className="mini-doc">
-                  <div className="mini-doc-head">
-                    <FileText size={20} />
-                    <span>
-                      RE-2026-1001<small>Nordlicht Studio</small>
-                    </span>
-                    <span className="mini-amount">1.190,00 €</span>
-                  </div>
-                  <div className="doc-line" />
-                  <div className="doc-line short" />
-                  <div className="doc-line" />
-                </div>
-                <div className="connection">
-                  <span />
-                  <Sparkles size={20} />
-                  <span />
-                </div>
-                <div className="mini-match">
-                  <span className="check-circle">
-                    <Check size={18} />
-                  </span>
-                  <span>
-                    Zahlung zugeordnet
-                    <small>Referenz und Betrag stimmen überein</small>
-                  </span>
-                </div>
-                <div className="floating-label">
-                  <ShieldCheck size={14} />
-                  Nachvollziehbar bis ins Detail
-                </div>
-              </div>
-            </section>
+            </div>
           )}
-          <section className="table-card">
+          {!startingDemo &&
+            !workspace.invoices.length &&
+            !missingDocs.length && (
+              <section className="welcome-card">
+                <div className="welcome-copy">
+                  <span className="pill green">
+                    <Sparkles size={14} />
+                    DEIN ERSTER ABGLEICH
+                  </span>
+                  <h2>
+                    Sechs Rechnungen.
+                    <br />
+                    Ein klarer Überblick.
+                  </h2>
+                  <p>
+                    Entdecke passende Zahlungen, eine Teilzahlung und einen
+                    möglichen Doppeleingang. Oder lass eine Beispielrechnung
+                    direkt von der KI auslesen.
+                  </p>
+                  <button
+                    className="button primary"
+                    onClick={startDemo}
+                    disabled={!!busy}
+                  >
+                    Demo starten <ArrowRight size={17} />
+                  </button>
+                  <small>
+                    Ohne Anmeldung · Mit herunterladbaren Beispielen
+                  </small>
+                </div>
+                <div className="welcome-visual" aria-hidden="true">
+                  <div className="mini-doc">
+                    <div className="mini-doc-head">
+                      <FileText size={20} />
+                      <span>
+                        RE-2026-1001<small>Nordlicht Studio</small>
+                      </span>
+                      <span className="mini-amount">1.190,00 €</span>
+                    </div>
+                    <div className="doc-line" />
+                    <div className="doc-line short" />
+                    <div className="doc-line" />
+                  </div>
+                  <div className="connection">
+                    <span />
+                    <Sparkles size={20} />
+                    <span />
+                  </div>
+                  <div className="mini-match">
+                    <span className="check-circle">
+                      <Check size={18} />
+                    </span>
+                    <span>
+                      Zahlung zugeordnet
+                      <small>Referenz und Betrag stimmen überein</small>
+                    </span>
+                  </div>
+                  <div className="floating-label">
+                    <ShieldCheck size={14} />
+                    Nachvollziehbar bis ins Detail
+                  </div>
+                </div>
+              </section>
+            )}
+          <section className="table-card" aria-busy={startingDemo}>
             <div className="table-header">
               <div>
                 <h2>
@@ -798,7 +884,7 @@ export default function App() {
                       activity: "Verarbeitungsprotokoll",
                     }[tab]
                   }{" "}
-                  <span className="count">
+                  <span className="count" hidden={startingDemo}>
                     {tab === "invoices"
                       ? workspace.invoices.length
                       : tab === "payments"
@@ -841,7 +927,7 @@ export default function App() {
                 )}
               </div>
             </div>
-            {tab !== "activity" && (
+            {!startingDemo && tab !== "activity" && (
               <div className="table-toolbar">
                 <div className="filter-tabs">
                   {tab === "matches" ? (
@@ -880,7 +966,8 @@ export default function App() {
                 </label>
               </div>
             )}
-            <div className="table-scroll">
+            {startingDemo && <DemoTableSkeleton />}
+            <div className="table-scroll" hidden={startingDemo}>
               {tab === "invoices" && (
                 <table>
                   <thead>
@@ -1188,26 +1275,27 @@ export default function App() {
                 </table>
               )}
             </div>
-            {((tab === "invoices" &&
-              !workspace.invoices.length &&
-              !missingDocs.length) ||
-              (tab === "matches" && !rows.length) ||
-              (tab === "payments" && !workspace.payments.length) ||
-              (tab === "activity" && !workspace.jobs.length)) && (
-              <div className="empty-state">
-                <FolderOpen size={30} />
-                <strong>
-                  {tab === "matches"
-                    ? "Bereit für deinen ersten Abgleich"
-                    : "Hier ist Platz für deine Daten"}
-                </strong>
-                <p>
-                  {tab === "matches"
-                    ? "Lade Rechnungen und Zahlungen und starte den Abgleich."
-                    : "Starte mit den Beispieldaten oder importiere eine Datei."}
-                </p>
-              </div>
-            )}
+            {!startingDemo &&
+              ((tab === "invoices" &&
+                !workspace.invoices.length &&
+                !missingDocs.length) ||
+                (tab === "matches" && !rows.length) ||
+                (tab === "payments" && !workspace.payments.length) ||
+                (tab === "activity" && !workspace.jobs.length)) && (
+                <div className="empty-state">
+                  <FolderOpen size={30} />
+                  <strong>
+                    {tab === "matches"
+                      ? "Bereit für deinen ersten Abgleich"
+                      : "Hier ist Platz für deine Daten"}
+                  </strong>
+                  <p>
+                    {tab === "matches"
+                      ? "Lade Rechnungen und Zahlungen und starte den Abgleich."
+                      : "Starte mit den Beispieldaten oder importiere eine Datei."}
+                  </p>
+                </div>
+              )}
             <div className="table-footer">
               <span>
                 <ShieldCheck size={14} />
